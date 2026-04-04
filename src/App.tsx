@@ -1,0 +1,1263 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useCallback, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Plus, 
+  Trash2, 
+  Settings, 
+  RefreshCw, 
+  Sparkles, 
+  Copy, 
+  Check, 
+  Download,
+  ChevronRight,
+  ChevronLeft,
+  X,
+  Menu,
+  MessageSquare,
+  ArrowUp
+} from 'lucide-react';
+import { 
+  ReactFlow, 
+  useNodesState, 
+  useEdgesState, 
+  addEdge, 
+  Connection, 
+  MarkerType, 
+  Node, 
+  Edge, 
+  Background, 
+  Controls, 
+  MiniMap,
+  useReactFlow,
+  ReactFlowProvider,
+  getNodesBounds
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { extractNodesAndEdges, generateFinalResponse } from './lib/gemini';
+import ReactMarkdown from 'react-markdown';
+import { toPng } from 'html-to-image';
+import { CustomNode } from './components/CustomNode';
+import { LombardiEdge } from './components/LombardiEdge';
+import { getLayoutedElements, getNodeSize } from './lib/flow-utils';
+import { cn } from './lib/utils';
+
+// --- Highlightable text components for analysis hover ---
+
+function HighlightableSentence({ text, children, onEnter, onLeave }: { text: string, children: React.ReactNode, onEnter: () => void, onLeave: () => void }) {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <span
+      style={{
+        backgroundColor: hovered ? 'rgba(0, 0, 0, 0.06)' : 'transparent',
+        textDecoration: hovered ? 'underline' : 'none',
+        textUnderlineOffset: '3px',
+        transition: 'background-color 150ms ease',
+        cursor: 'default',
+        borderRadius: '2px',
+        padding: '0 2px',
+        margin: '0 -2px'
+      }}
+      onMouseEnter={() => { setHovered(true); onEnter(); }}
+      onMouseLeave={() => { setHovered(false); onLeave(); }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function parseAndWrapSentences(children: React.ReactNode, onEnter: (t: string) => void, onLeave: () => void): React.ReactNode {
+  return React.Children.map(children, child => {
+    if (typeof child === 'string') {
+      const sentences = child.match(/[^.!?\n]+[.!?]+|\s+|[^.!?\n]+$/g) || [child];
+      return sentences.map((s, i) => {
+        if (!s.trim()) return s;
+        return (
+          <HighlightableSentence key={`${i}`} text={s} onEnter={() => onEnter(s)} onLeave={onLeave}>
+            {s}
+          </HighlightableSentence>
+        );
+      });
+    }
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, {
+        ...(child.props as any),
+        children: parseAndWrapSentences((child.props as any).children, onEnter, onLeave)
+      });
+    }
+    return child;
+  });
+}
+
+// --- Flow Content Component ---
+
+export default function App() {
+  return (
+    <ReactFlowProvider>
+      <FlowContent />
+    </ReactFlowProvider>
+  );
+}
+
+function FlowContent() {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const { fitView, setCenter } = useReactFlow();
+  const [prompt, setPrompt] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(new Set());
+  const [sidebarWidth, setSidebarWidth] = useState(360);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const mobileTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const isResizing = useRef(false);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidth = e.clientX - 24; 
+    if (newWidth > 280 && newWidth < 800) {
+      setSidebarWidth(newWidth);
+    }
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    isResizing.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', stopResizing);
+  }, [handleMouseMove]);
+
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResizing);
+  }, [handleMouseMove, stopResizing]);
+
+  const nodeTypes = useMemo(() => ({
+    custom: CustomNode,
+  }), []);
+
+  const edgeTypes = useMemo(() => ({
+    lombardi: LombardiEdge,
+  }), []);
+
+  React.useEffect(() => {
+    document.documentElement.classList.remove('dark');
+  }, []);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(true);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      const newEdge = {
+        ...params,
+        id: `e-${params.source}-${params.target}`,
+        label: 'Connection',
+        type: 'lombardi',
+        animated: true,
+        data: { strength: 5 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#000000',
+        },
+        style: { stroke: '#000000', strokeWidth: 2.5 },
+        selectionWidth: 20,
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+    },
+    [setEdges]
+  );
+
+  const handleExtract = async () => {
+    if (!prompt.trim()) return;
+    setIsExtracting(true);
+    setResult(null);
+    try {
+      const { nodes: extractedNodes, edges: extractedEdges } = await extractNodesAndEdges(prompt);
+      
+      const initialNodes: Node[] = extractedNodes.map((n: any) => ({
+        id: n.id,
+        type: 'custom',
+        data: { 
+          label: n.label, 
+          type: n.type, 
+          mentions: n.mentions,
+          strength: n.strength || 5
+        },
+        position: { x: 0, y: 0 },
+      }));
+
+      const initialEdges: Edge[] = extractedEdges.map((e: any, idx: number) => ({
+        id: `e-${e.source}-${e.target}`,
+        source: e.source,
+        target: e.target,
+        label: e.label,
+        type: 'lombardi', // Use custom edge for better label rendering
+        animated: false,
+        data: { strength: e.strength || 5, isDirected: e.isDirected },
+        markerEnd: e.isDirected ? { 
+          type: MarkerType.ArrowClosed, 
+          color: '#000000', 
+          width: 12, 
+          height: 12,
+          strokeWidth: 1
+        } : undefined,
+        style: { 
+          stroke: '#000000', 
+          strokeWidth: 0.8, 
+          opacity: 0.7,
+          strokeDasharray: idx % 5 === 0 ? '5,5' : 'none', // Mix of solid and dashed lines
+        },
+        selectionWidth: 20,
+      }));
+
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        initialNodes,
+        initialEdges,
+        'RADIAL'
+      );
+
+      setNodes([...layoutedNodes]);
+      setEdges(layoutedEdges);
+      
+      setTimeout(() => fitView({ padding: 0.1, duration: 1000 }), 100);
+      
+      if (isMobile) setSidebarOpen(false);
+      
+      // Reset textarea height after extraction
+      if (mobileTextareaRef.current) {
+        mobileTextareaRef.current.style.height = 'auto';
+      }
+    } catch (error) {
+      console.error("Extraction failed", error);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const onLayout = useCallback(
+    (direction: string) => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        nodes,
+        edges,
+        direction
+      );
+
+      setNodes([...layoutedNodes]);
+      setEdges([...layoutedEdges]);
+      setTimeout(() => fitView({ padding: 0.1, duration: 1000 }), 100);
+    },
+    [nodes, edges, setNodes, setEdges, fitView]
+  );
+
+  const onDownload = useCallback(() => {
+    if (reactFlowWrapper.current === null || nodes.length === 0) return;
+
+    const nodesBounds = getNodesBounds(nodes);
+    const margin = 100;
+    
+    // Calculate dimensions to include exactly 100px margin on all sides
+    const width = nodesBounds.width + margin * 2;
+    const height = nodesBounds.height + margin * 2;
+
+    // Use zoom level 1 for high-fidelity 1:1 export
+    const zoom = 1;
+    
+    // Calculate the offset to position the top-left node at (margin, margin)
+    const x = margin - nodesBounds.x;
+    const y = margin - nodesBounds.y;
+
+    const viewportElement = reactFlowWrapper.current.querySelector('.react-flow__viewport') as HTMLElement;
+    if (!viewportElement) return;
+
+    toPng(viewportElement, {
+      backgroundColor: '#FFFFFF',
+      width: width,
+      height: height,
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+        transform: `translate(${x}px, ${y}px) scale(${zoom})`,
+      },
+    })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `node-ai-map-${new Date().getTime()}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error('Download failed', err);
+      });
+  }, [nodes]);
+
+  const handleGenerate = async () => {
+    if (nodes.length === 0) return;
+    setIsGenerating(true);
+    try {
+      const nodeData = nodes.map(n => ({ 
+        id: n.id, 
+        label: n.data.label as string, 
+        type: n.data.type as string,
+        mentions: (n.data.mentions as number) || 10,
+        strength: (n.data.strength as number) || 5
+      }));
+      const edgeData = edges.map(e => ({ 
+        source: e.source, 
+        target: e.target, 
+        label: e.label as string, 
+        strength: (e.data?.strength as number) || 5,
+        isDirected: !!e.markerEnd
+      }));
+      const response = await generateFinalResponse(nodeData, edgeData, prompt);
+      setResult(response);
+    } catch (error) {
+      console.error("Generation failed", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const [selectedElement, setSelectedElement] = useState<{ type: 'node' | 'edge', id: string } | null>(null);
+
+  const onElementClick = useCallback((_: any, element: any) => {
+    if (element.id) {
+      setSelectedElement({
+        type: 'source' in element ? 'edge' : 'node',
+        id: element.id
+      });
+    }
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedElement(null);
+  }, []);
+
+  const updateNodeLabel = (id: string, label: string) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, label } };
+        }
+        return node;
+      })
+    );
+  };
+
+  const updateNodeStrength = (id: string, strength: number) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, strength } };
+        }
+        return node;
+      })
+    );
+  };
+
+  const updateEdgeLabel = (id: string, label: string) => {
+    setEdges((eds) =>
+      eds.map((edge) => {
+        if (edge.id === id) {
+          return { ...edge, label };
+        }
+        return edge;
+      })
+    );
+  };
+
+  const updateEdgeStrength = (id: string, strength: number) => {
+    setEdges((eds) =>
+      eds.map((edge) => {
+        if (edge.id === id) {
+          return { 
+            ...edge, 
+            data: { ...edge.data, strength },
+            style: { ...edge.style, strokeWidth: Math.max(1, strength / 2) }
+          };
+        }
+        return edge;
+      })
+    );
+  };
+
+  const deleteElement = useCallback(() => {
+    if (!selectedElement) return;
+    if (selectedElement.type === 'node') {
+      setNodes((nds) => nds.filter((n) => n.id !== selectedElement.id));
+      setEdges((eds) => eds.filter((e) => e.source !== selectedElement.id && e.target !== selectedElement.id));
+    } else {
+      setEdges((eds) => eds.filter((e) => e.id !== selectedElement.id));
+    }
+    setSelectedElement(null);
+  }, [selectedElement, setNodes, setEdges]);
+
+  const addNode = () => {
+    const id = `node-${Date.now()}`;
+    const newNode: Node = {
+      id,
+      type: 'custom',
+      data: { label: 'New Node', type: 'concept', strength: 5 },
+      position: { x: Math.random() * 100, y: Math.random() * 100 },
+    };
+    setNodes((nds) => nds.concat(newNode));
+    setSelectedElement({ type: 'node', id });
+  };
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedElement) {
+        // Don't delete if user is typing in an input or textarea
+        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+          return;
+        }
+        deleteElement();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedElement, deleteElement]);
+
+  // Keyword-based node matching for analysis hover highlight
+  const getMatchingNodeIds = useCallback((text: string): Set<string> => {
+    const lowerText = text.toLowerCase();
+    const matched = new Set<string>();
+    nodes.forEach(node => {
+      const label = (node.data.label as string).toLowerCase();
+      const words = label.split(/[\s\/,\-\(\)]+/).filter(w => w.length > 3);
+      if (words.some(word => lowerText.includes(word))) {
+        matched.add(node.id);
+      }
+    });
+    return matched;
+  }, [nodes]);
+
+  // Nodes with highlighted flag for analysis hover
+  const nodesWithHighlight = useMemo(() => {
+    const isAnyHighlighted = highlightedNodeIds.size > 0;
+    return nodes.map(n => ({
+      ...n,
+      data: {
+        ...n.data,
+        highlighted: highlightedNodeIds.has(n.id),
+        isAnyHighlighted,
+      }
+    }));
+  }, [nodes, highlightedNodeIds]);
+
+  const focusOnNode = useCallback((nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    const size = getNodeSize(node.data?.mentions as number);
+    setCenter(node.position.x + size / 2, node.position.y + size / 2, { zoom: 0.75, duration: 500 });
+    setSelectedElement({ type: 'node', id: nodeId });
+  }, [nodes, setCenter]);
+
+  const handleCopy = async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(result);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  return (
+    <div className="flex h-screen w-full bg-apple-bg text-apple-text font-sans overflow-hidden relative">
+
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <motion.aside
+          initial={false}
+          animate={{
+            width: sidebarOpen ? sidebarWidth : 56,
+          }}
+          style={{ height: '100vh', top: 0, left: 0 }}
+          transition={{ type: 'tween', duration: 0.12, ease: 'linear' }}
+          className="fixed z-50 bg-white border-r border-black overflow-hidden flex flex-col"
+        >
+          {/* Resize Handle */}
+          {sidebarOpen && (
+            <div 
+              onMouseDown={startResizing}
+              className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-apple-blue/20 transition-colors z-[60]"
+            />
+          )}
+
+          {/* Sidebar Header */}
+          <div className={cn(
+            "flex items-center border-b border-black shrink-0",
+            sidebarOpen ? "justify-between px-5 h-12" : "justify-center h-12"
+          )}>
+            {sidebarOpen && (
+              <span className="text-[11px] text-black tracking-widest uppercase">NodePrompt</span>
+            )}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="w-8 h-8 flex items-center justify-center hover:bg-black hover:text-white text-black"
+              style={{ transition: 'background 80ms linear, color 80ms linear' }}
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className={cn(
+            "flex-1 overflow-y-auto flex flex-col",
+            sidebarOpen ? "px-6 py-5 space-y-5" : "px-2 py-5 space-y-4 items-center"
+          )}>
+            {sidebarOpen ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={addNode}
+                    className="flex-1 apple-button-secondary group"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="text-[13px]">New Node</span>
+                  </button>
+                  <button
+                    onClick={onDownload}
+                    className="w-11 h-11 flex-shrink-0 flex items-center justify-center bg-white border border-black hover:bg-black hover:text-white text-black"
+                    style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                    title="Download Image"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex-1 space-y-4">
+                  {selectedElement ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-8"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-widest text-black">
+                          {selectedElement.type === 'node' ? 'Node' : 'Edge'}
+                        </span>
+                        <button
+                          onClick={() => setSelectedElement(null)}
+                          className="w-7 h-7 flex items-center justify-center hover:bg-black hover:text-white text-black"
+                          style={{ transition: 'background 80ms linear, color 80ms linear', border: '1px solid #000' }}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] text-black">Label</label>
+                        <input
+                          type="text"
+                          value={
+                            selectedElement.type === 'node'
+                              ? nodes.find(n => n.id === selectedElement.id)?.data.label as string || ''
+                              : edges.find(e => e.id === selectedElement.id)?.label as string || ''
+                          }
+                          onChange={(e) => {
+                            if (selectedElement.type === 'node') {
+                              updateNodeLabel(selectedElement.id, e.target.value);
+                            } else {
+                              updateEdgeLabel(selectedElement.id, e.target.value);
+                            }
+                          }}
+                          className="apple-input w-full"
+                        />
+                      </div>
+
+                      {selectedElement.type === 'node' ? (
+                        <div className="space-y-6">
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] text-black">Type</label>
+                            <select
+                              value={nodes.find(n => n.id === selectedElement.id)?.data.type as string || 'concept'}
+                              onChange={(e) => {
+                                setNodes((nds) =>
+                                  nds.map((node) => {
+                                    if (node.id === selectedElement.id) {
+                                      return { ...node, data: { ...node.data, type: e.target.value } };
+                                    }
+                                    return node;
+                                  })
+                                );
+                              }}
+                              className="apple-input w-full appearance-none"
+                            >
+                              <option value="concept">Concept</option>
+                              <option value="entity">Entity</option>
+                              <option value="action">Action</option>
+                              <option value="attribute">Attribute</option>
+                              <option value="risk">Risk</option>
+                              <option value="opportunity">Opportunity</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] text-black">Influence Strength</label>
+                              <span className="text-[11px] text-black tabular-nums">
+                                {nodes.find(n => n.id === selectedElement.id)?.data?.strength || 5}
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="10"
+                              step="1"
+                              value={nodes.find(n => n.id === selectedElement.id)?.data?.strength || 5}
+                              onChange={(e) => updateNodeStrength(selectedElement.id, parseInt(e.target.value))}
+                              className="w-full h-px bg-black appearance-none cursor-pointer accent-black"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] text-black">Strength</label>
+                            <span className="text-[11px] text-black tabular-nums">
+                              {edges.find(e => e.id === selectedElement.id)?.data?.strength || 5}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value={edges.find(e => e.id === selectedElement.id)?.data?.strength || 5}
+                            onChange={(e) => updateEdgeStrength(selectedElement.id, parseInt(e.target.value))}
+                            className="w-full h-px bg-black appearance-none cursor-pointer accent-black"
+                          />
+
+                          <div className="flex items-center justify-between pt-1">
+                            <label className="text-[11px] text-black">Directed</label>
+                            <button
+                              onClick={() => {
+                                setEdges((eds) =>
+                                  eds.map((edge) => {
+                                    if (edge.id === selectedElement.id) {
+                                      const isDirected = !edge.markerEnd;
+                                      return {
+                                        ...edge,
+                                        markerEnd: isDirected ? { type: MarkerType.ArrowClosed, color: '#000000' } : undefined,
+                                      };
+                                    }
+                                    return edge;
+                                  })
+                                );
+                              }}
+                              className={cn(
+                                "w-10 h-5 relative border border-black",
+                                edges.find(e => e.id === selectedElement.id)?.markerEnd ? "bg-black" : "bg-white"
+                              )}
+                              style={{ transition: 'background 80ms linear' }}
+                            >
+                              <div className={cn(
+                                "absolute top-1 w-3 h-3",
+                                edges.find(e => e.id === selectedElement.id)?.markerEnd ? "left-[22px] bg-white" : "left-1 bg-black"
+                              )} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={deleteElement}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-black hover:bg-black hover:text-white text-[13px] border border-black"
+                        style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <textarea
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                          placeholder="Describe a narrative, system, or power structure to map..."
+                          className="apple-input w-full h-52 resize-none text-[13px] leading-relaxed"
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleExtract}
+                        disabled={isExtracting || !prompt.trim()}
+                        className="apple-button-primary w-full"
+                      >
+                        <span className="text-[13px]">
+                          {isExtracting ? "Extracting..." : "Extract Influence Map"}
+                        </span>
+                      </button>
+
+                      {nodes.length > 0 && !isMobile && (
+                        <div className="pt-4 border-t border-black space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] uppercase tracking-widest text-black">Top Influences</span>
+                            <span className="text-[11px] text-black tabular-nums">{nodes.length}n · {edges.length}e</span>
+                          </div>
+
+                          <div>
+                            {[...nodes]
+                              .sort((a, b) => ((b.data?.strength as number) || 5) - ((a.data?.strength as number) || 5))
+                              .slice(0, 6)
+                              .map((node, i) => (
+                                <button
+                                  key={node.id}
+                                  onClick={() => focusOnNode(node.id)}
+                                  className="w-full flex items-center gap-3 px-0 py-1.5 hover:bg-black hover:text-white group text-left border-b border-black/10 last:border-0"
+                                  style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                                  title={node.data.label as string}
+                                >
+                                  <span className="text-[10px] w-4 shrink-0 text-center text-black/30 group-hover:text-white/50 tabular-nums">{i + 1}</span>
+                                  <span className="flex-1 text-[12px] truncate">{node.data.label as string}</span>
+                                  <span className="text-[10px] shrink-0 tabular-nums text-black/40 group-hover:text-white/60 pr-1">{node.data?.strength || 5}</span>
+                                </button>
+                              ))
+                            }
+                          </div>
+
+                          <button
+                            onClick={handleGenerate}
+                            disabled={isGenerating}
+                            className="apple-button-secondary w-full"
+                          >
+                            {isGenerating ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5" />
+                            )}
+                            <span className="text-[13px]">Generate Analysis</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {result && (
+                  <div className="pt-4 border-t border-black">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px] uppercase tracking-widest text-black">Analysis</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={handleCopy}
+                          className="w-7 h-7 flex items-center justify-center hover:bg-black hover:text-white text-black"
+                          style={{ transition: 'background 80ms linear, color 80ms linear', border: '1px solid #000' }}
+                        >
+                          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          onClick={() => setResult(null)}
+                          className="w-7 h-7 flex items-center justify-center hover:bg-black hover:text-white text-black"
+                          style={{ transition: 'background 80ms linear, color 80ms linear', border: '1px solid #000' }}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-[13px] leading-relaxed markdown-body">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => (
+                            <p className="mb-2">
+                              {parseAndWrapSentences(
+                                children, 
+                                (t) => setHighlightedNodeIds(getMatchingNodeIds(t)), 
+                                () => setHighlightedNodeIds(new Set())
+                              )}
+                            </p>
+                          ),
+                          li: ({ children }) => (
+                            <li className="list-inside">
+                              {parseAndWrapSentences(
+                                children, 
+                                (t) => setHighlightedNodeIds(getMatchingNodeIds(t)), 
+                                () => setHighlightedNodeIds(new Set())
+                              )}
+                            </li>
+                          )
+                        }}
+                      >{result}</ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Mini Mode Icons */
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={addNode}
+                  className="w-9 h-9 flex items-center justify-center bg-white border border-black hover:bg-black hover:text-white text-black"
+                  style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                  title="New Node"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+                {nodes.length > 0 && (
+                  <button
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    className="w-9 h-9 flex items-center justify-center bg-white border border-black hover:bg-black hover:text-white text-black"
+                    style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                    title="Generate Analysis"
+                  >
+                    {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  </button>
+                )}
+                <button
+                  onClick={onDownload}
+                  className="w-9 h-9 flex items-center justify-center bg-white border border-black hover:bg-black hover:text-white text-black"
+                  style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                  title="Download Image"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.aside>
+      )}
+
+      {/* Main Canvas Area */}
+      <main
+        className="flex-1 relative bg-apple-bg flex flex-col"
+        style={{ marginLeft: !isMobile ? (sidebarOpen ? sidebarWidth : 56) : 0 }}
+      >
+        <div ref={reactFlowWrapper} className="flex-1 relative">
+          <ReactFlow
+            nodes={nodesWithHighlight}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onElementClick}
+            onEdgeClick={onElementClick}
+            onPaneClick={onPaneClick}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            fitView
+            minZoom={0.01}
+            maxZoom={4}
+            colorMode="light"
+            className="bg-transparent"
+          >
+            <Background gap={20} size={1} color="#D0D0D0" />
+            {!isMobile && (
+              <Controls 
+                showInteractive={false}
+                position="bottom-right"
+                className="!bg-transparent !border-none !shadow-none !m-6" 
+              />
+            )}
+            {!isMobile && (
+              <MiniMap
+                className="!bg-white !border !border-black !rounded-none !shadow-none"
+                nodeColor={() => '#000000'}
+                maskColor="rgba(255, 255, 255, 0.5)"
+              />
+            )}
+          </ReactFlow>
+
+          {/* Mobile Action Buttons - Top Right */}
+          {isMobile && (
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-30">
+              <button
+                onClick={addNode}
+                className="p-3 bg-white text-black border border-black hover:bg-black hover:text-white"
+                style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                title="Add Node"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onDownload}
+                className="p-3 bg-white text-black border border-black hover:bg-black hover:text-white"
+                style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                title="Download Image"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
+          {/* Mobile Analysis Result Overlay */}
+          <AnimatePresence>
+            {isMobile && result && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] bg-white overflow-y-auto custom-scrollbar p-8 safe-area-inset"
+              >
+                <div className="max-w-2xl mx-auto">
+                  <div className="flex items-center justify-between mb-8 sticky top-0 bg-white/80 backdrop-blur-md py-4 z-10">
+                    <span className="text-[11px] uppercase tracking-widest text-black">Analysis</span>
+                    <div className="flex gap-1">
+                      <button onClick={handleCopy} className="w-8 h-8 flex items-center justify-center hover:bg-black hover:text-white text-black border border-black" style={{ transition: 'background 80ms linear, color 80ms linear' }}>
+                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => setResult(null)} className="w-8 h-8 flex items-center justify-center hover:bg-black hover:text-white text-black border border-black" style={{ transition: 'background 80ms linear, color 80ms linear' }}>
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-sm leading-relaxed markdown-body pb-20">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => (
+                          <p className="mb-2">
+                            {parseAndWrapSentences(
+                              children, 
+                              (t) => setHighlightedNodeIds(getMatchingNodeIds(t)), 
+                              () => setHighlightedNodeIds(new Set())
+                            )}
+                          </p>
+                        ),
+                        li: ({ children }) => (
+                          <li className="list-inside">
+                            {parseAndWrapSentences(
+                              children, 
+                              (t) => setHighlightedNodeIds(getMatchingNodeIds(t)), 
+                              () => setHighlightedNodeIds(new Set())
+                            )}
+                          </li>
+                        )
+                      }}
+                    >{result}</ReactMarkdown>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Mobile Edit Panel Overlay */}
+          <AnimatePresence>
+            {isMobile && selectedElement && (
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                className="absolute inset-x-0 bottom-0 z-[80] bg-white border-t border-black p-6 safe-bottom"
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-[11px] uppercase tracking-widest text-black">
+                    {selectedElement.type === 'node' ? 'Node' : 'Edge'}
+                  </span>
+                  <button
+                    onClick={() => setSelectedElement(null)}
+                    className="w-8 h-8 flex items-center justify-center hover:bg-black hover:text-white text-black border border-black"
+                    style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-apple-gray-600 ml-1">Label</label>
+                    <input
+                      type="text"
+                      value={
+                        selectedElement.type === 'node' 
+                          ? nodes.find(n => n.id === selectedElement.id)?.data.label as string || ''
+                          : edges.find(e => e.id === selectedElement.id)?.label as string || ''
+                      }
+                      onChange={(e) => {
+                        if (selectedElement.type === 'node') {
+                          updateNodeLabel(selectedElement.id, e.target.value);
+                        } else {
+                          updateEdgeLabel(selectedElement.id, e.target.value);
+                        }
+                      }}
+                      className="apple-input w-full"
+                    />
+                  </div>
+
+                  {selectedElement.type === 'node' ? (
+                    <div className="space-y-5">
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-apple-gray-600 ml-1">Type</label>
+                        <select
+                          value={nodes.find(n => n.id === selectedElement.id)?.data.type as string || 'concept'}
+                          onChange={(e) => {
+                            setNodes((nds) =>
+                              nds.map((node) => {
+                                if (node.id === selectedElement.id) {
+                                  return { ...node, data: { ...node.data, type: e.target.value } };
+                                }
+                                return node;
+                              })
+                            );
+                          }}
+                          className="apple-input w-full appearance-none"
+                        >
+                          <option value="concept">Concept</option>
+                          <option value="entity">Entity</option>
+                          <option value="action">Action</option>
+                          <option value="attribute">Attribute</option>
+                          <option value="risk">Risk</option>
+                          <option value="opportunity">Opportunity</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                          <label className="text-xs font-medium text-apple-gray-600">Influence Strength</label>
+                          <span className="text-xs font-bold text-black">
+                            {nodes.find(n => n.id === selectedElement.id)?.data?.strength || 5}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          step="1"
+                          value={nodes.find(n => n.id === selectedElement.id)?.data?.strength || 5}
+                          onChange={(e) => updateNodeStrength(selectedElement.id, parseInt(e.target.value))}
+                          className="w-full h-1 bg-apple-gray-200 rounded-full appearance-none cursor-pointer accent-black"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between px-1">
+                        <label className="text-xs font-medium text-apple-gray-600">Strength</label>
+                        <span className="text-xs font-bold text-black">
+                          {edges.find(e => e.id === selectedElement.id)?.data?.strength || 5}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        value={edges.find(e => e.id === selectedElement.id)?.data?.strength || 5}
+                        onChange={(e) => updateEdgeStrength(selectedElement.id, parseInt(e.target.value))}
+                        className="w-full h-1 bg-apple-gray-200 rounded-full appearance-none cursor-pointer accent-black"
+                      />
+
+                      <div className="flex items-center justify-between pt-2 px-1">
+                        <label className="text-xs font-medium text-apple-gray-600">Directed</label>
+                        <button
+                          onClick={() => {
+                            setEdges((eds) =>
+                              eds.map((edge) => {
+                                if (edge.id === selectedElement.id) {
+                                  const isDirected = !edge.markerEnd;
+                                  return {
+                                    ...edge,
+                                    markerEnd: isDirected ? { type: MarkerType.ArrowClosed, color: '#000000' } : undefined,
+                                  };
+                                }
+                                return edge;
+                              })
+                            );
+                          }}
+                          className={cn(
+                            "w-12 h-6 rounded-full transition-all relative border border-black",
+                            edges.find(e => e.id === selectedElement.id)?.markerEnd ? "bg-black" : "bg-white"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-4 h-4 rounded-full",
+                            edges.find(e => e.id === selectedElement.id)?.markerEnd ? "left-6 bg-white" : "left-1 bg-black"
+                          )} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={deleteElement}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-black hover:bg-black hover:text-white text-[13px] border border-black"
+                    style={{ transition: 'background 80ms linear, color 80ms linear' }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Mobile Chat-style Input Bar */}
+        {isMobile && (
+          <div className="p-4 bg-white border-t border-black safe-bottom">
+            <div className="flex items-end gap-2 bg-white border border-black p-1.5 pl-4">
+              <textarea
+                ref={mobileTextareaRef}
+                value={prompt}
+                onChange={(e) => {
+                  setPrompt(e.target.value);
+                  // Auto-resize logic
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
+                }}
+                placeholder="Describe to map..."
+                rows={1}
+                className="flex-1 bg-transparent border-none focus:ring-0 text-[15px] py-2.5 resize-none overflow-y-auto custom-scrollbar"
+                style={{ height: 'auto', minHeight: '40px' }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleExtract();
+                  }
+                }}
+              />
+              <div className="flex gap-2 flex-shrink-0 mb-0.5">
+                <AnimatePresence mode="popLayout">
+                  {nodes.length > 0 && (
+                    <motion.button
+                      key="analysis-btn"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      onClick={handleGenerate}
+                      disabled={isGenerating || isExtracting}
+                      className="w-10 h-10 flex items-center justify-center bg-black text-white"
+                    >
+                      {isGenerating ? (
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-5 h-5" />
+                      )}
+                    </motion.button>
+                  )}
+                  {(prompt.trim() !== '' || nodes.length === 0) && (
+                    <motion.button
+                      key="send-btn"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      onClick={handleExtract}
+                      disabled={isExtracting || isGenerating || !prompt.trim()}
+                      className={cn(
+                        "w-10 h-10 flex items-center justify-center",
+                        prompt.trim() ? "bg-black text-white" : "bg-apple-gray-100 text-apple-gray-300"
+                      )}
+                    >
+                      {isExtracting ? (
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <ArrowUp className="w-5 h-5" />
+                      )}
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: var(--apple-border);
+          border-radius: 10px;
+        }
+        .react-flow__node {
+          cursor: grab;
+        }
+        .react-flow__node:active {
+          cursor: grabbing;
+        }
+        .react-flow__handle {
+          width: 12px;
+          height: 12px;
+          background: var(--apple-accent);
+          border: 2px solid var(--apple-card);
+        }
+        .react-flow__edge-path {
+          stroke-linecap: round;
+          transition: stroke 0.2s, stroke-width 0.2s;
+        }
+        .react-flow__edge.selected .react-flow__edge-path {
+          stroke-width: 2.5;
+          stroke: var(--apple-accent);
+        }
+        .react-flow__controls-button {
+          border-bottom: 1px solid var(--apple-border) !important;
+          background: var(--apple-surface) !important;
+          backdrop-blur: 10px;
+        }
+        .react-flow__controls-button svg {
+          fill: var(--apple-text) !important;
+        }
+        .markdown-body {
+          font-family: var(--font-sans);
+          font-size: 0.875rem;
+          line-height: 1.6;
+        }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+          color: inherit;
+          margin-top: 1.25rem;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+          letter-spacing: -0.02em;
+        }
+        .markdown-body h1 { font-size: 1.25rem; }
+        .markdown-body h2 { font-size: 1.1rem; }
+        .markdown-body h3 { font-size: 1rem; }
+        .markdown-body p {
+          margin-bottom: 0.75rem;
+        }
+        .markdown-body ul, .markdown-body ol {
+          margin-bottom: 0.75rem;
+          padding-left: 1.25rem;
+        }
+        .markdown-body li {
+          margin-bottom: 0.25rem;
+        }
+        .markdown-body code {
+          background: rgba(0, 0, 0, 0.05);
+          padding: 0.1rem 0.3rem;
+          border-radius: 4px;
+          font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+          font-size: 0.8rem;
+        }
+        .dark .markdown-body code {
+          background: rgba(255, 255, 255, 0.1);
+        }
+        .markdown-body pre {
+          background: rgba(0, 0, 0, 0.03);
+          padding: 1rem;
+          overflow-x: auto;
+          margin-bottom: 1rem;
+          border-radius: 10px;
+        }
+        .dark .markdown-body pre {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .safe-bottom {
+          padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        }
+      `}</style>
+    </div>
+  );
+}

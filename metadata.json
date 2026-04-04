@@ -1,0 +1,5 @@
+{
+  "name": "NodePrompt",
+  "description": "A node-based AI prompt engineering tool that breaks linear language structures by visualizing and connecting keywords as interactive nodes.",
+  "requestFramePermissions": []
+}

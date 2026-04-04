@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  --color-apple-blue: #007AFF;
+  --color-apple-indigo: #5856D6;
+  --color-apple-red: #FF3B30;
+  --color-apple-green: #34C759;
+  --color-apple-orange: #FF9500;
+  --color-apple-pink: #FF2D55;
+  --color-apple-teal: #5AC8FA;
+  --color-apple-yellow: #FFCC00;
+  --color-apple-gray-50: #F2F2F7;
+  --color-apple-gray-100: #E5E5EA;
+  --color-apple-gray-200: #D1D1D6;
+  --color-apple-gray-300: #C7C7CC;
+  --color-apple-gray-400: #AEAEB2;
+  --color-apple-gray-500: #8E8E93;
+  --color-apple-gray-600: #636366;
+  --color-apple-gray-700: #48484A;
+  --color-apple-gray-800: #2C2C2E;
+  --color-apple-gray-900: #1C1C1E;
+  --color-apple-border: rgba(0, 0, 0, 0.1);
+  --color-apple-accent: var(--apple-accent);
+
+  --font-sans: "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+:root {
+  --apple-bg: #FFFFFF;
+  --apple-card: #FFFFFF;
+  --apple-text: #000000;
+  --apple-secondary-text: #8E8E93;
+  --apple-accent: #000000;
+  --apple-border: rgba(0, 0, 0, 0.08);
+  --apple-surface: rgba(255, 255, 255, 0.7);
+}
+
+body {
+  background-color: var(--apple-bg);
+  font-family: var(--font-sans);
+  color: var(--apple-text);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+/* Flat button styles — no radius, inversion on hover */
+.apple-button-primary {
+  @apply bg-black text-white px-6 h-11 font-normal flex items-center justify-center gap-2;
+  border: 1px solid #000000;
+  border-radius: 0;
+  transition: background 80ms linear, color 80ms linear;
+}
+.apple-button-primary:hover {
+  @apply bg-white text-black;
+}
+.apple-button-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.apple-button-secondary {
+  @apply bg-white text-black px-6 h-11 font-normal flex items-center justify-center gap-2;
+  border: 1px solid #000000;
+  border-radius: 0;
+  transition: background 80ms linear, color 80ms linear;
+}
+.apple-button-secondary:hover:not(:disabled) {
+  @apply bg-black text-white;
+}
+.apple-button-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.apple-input {
+  @apply bg-white border border-black px-4 py-2.5 focus:outline-none text-[14px];
+  border-radius: 0;
+  transition: none;
+}
+.apple-input::placeholder {
+  color: #AEAEB2;
+}
+
+.apple-card {
+  @apply bg-white border border-black overflow-hidden;
+  border-radius: 0;
+}
+
+/* Sidebar */
+.apple-sidebar {
+  @apply bg-white border-r border-black;
+}
+
+/* React Flow Controls — square */
+.react-flow__controls {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__controls button {
+  border-radius: 0 !important;
+  border: 1px solid black !important;
+  background: white !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 80ms linear !important;
+  box-shadow: none !important;
+}
+
+.react-flow__controls button:hover {
+  background: black !important;
+}
+
+.react-flow__controls button:hover svg {
+  fill: white !important;
+  stroke: white !important;
+}
+
+/* Node — circular is intentional for graph semantics */
+.apple-node {
+  @apply rounded-full border border-black flex items-center justify-center text-center bg-white;
+}

@@ -53,14 +53,9 @@ function HighlightableSentence({ text, children, onEnter, onLeave }: { text: str
   return (
     <span
       style={{
-        backgroundColor: hovered ? 'rgba(0, 0, 0, 0.06)' : 'transparent',
         textDecoration: hovered ? 'underline' : 'none',
         textUnderlineOffset: '3px',
-        transition: 'background-color 150ms ease',
         cursor: 'default',
-        borderRadius: '2px',
-        padding: '0 2px',
-        margin: '0 -2px'
       }}
       onMouseEnter={() => { setHovered(true); onEnter(); }}
       onMouseLeave={() => { setHovered(false); onLeave(); }}

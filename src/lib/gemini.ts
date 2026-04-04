@@ -1,6 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+let ai: GoogleGenAI;
+try {
+  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+} catch (e) {
+  console.warn("GoogleGenAI initialization failed:", e);
+  ai = null as unknown as GoogleGenAI;
+}
 
 export interface NodeData {
   id: string;

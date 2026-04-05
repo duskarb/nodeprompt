@@ -259,7 +259,7 @@ function FlowContent() {
           target: e.target,
           label: e.label,
           type: "lombardi", // Use custom edge for better label rendering
-          animated: false,
+          animated: !!e.isDirected,
           data: { strength: e.strength || 5, isDirected: e.isDirected },
           markerEnd: e.isDirected
             ? {
@@ -272,7 +272,7 @@ function FlowContent() {
             : undefined,
           style: {
             stroke: "#000000",
-            strokeWidth: 0.8,
+            strokeWidth: Math.max(1, (e.strength || 5) / 2),
             opacity: 0.7,
             strokeDasharray: idx % 5 === 0 ? "5,5" : "none", // Mix of solid and dashed lines
           },
@@ -531,7 +531,7 @@ function FlowContent() {
     (nodeId: string) => {
       const node = nodes.find((n) => n.id === nodeId);
       if (!node) return;
-      const size = getNodeSize(node.data?.mentions as number);
+      const size = getNodeSize(node.data?.strength as number);
       setCenter(node.position.x + size / 2, node.position.y + size / 2, {
         zoom: 0.75,
         duration: 500,
@@ -568,7 +568,7 @@ function FlowContent() {
             borderRadius: 16,
             background: "#F7F7FA",
             boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.06), 0 4px 6px -1px rgba(0,0,0,0.07), 0 10px 40px -4px rgba(0,0,0,0.13), 0 0 80px -10px rgba(120,80,255,0.10), 0 0 40px -8px rgba(0,150,255,0.08)",
+              "0 0 0 1px rgba(0,0,0,0.06), 0 4px 6px -1px rgba(0,0,0,0.07), 0 10px 40px -4px rgba(0,0,0,0.13), 0 0 80px -10px rgba(0,0,0,0.10), 0 0 40px -8px rgba(0,0,0,0.08)",
           }}
           transition={{ type: "tween", duration: 0.12, ease: "linear" }}
           className="fixed z-50 overflow-hidden flex flex-col"
@@ -593,7 +593,7 @@ function FlowContent() {
                 NodePrompt
               </span>
             )}
-            <motion.button
+            <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="flex items-center justify-center text-black/50 hover:text-black/90"
               style={{
@@ -603,12 +603,10 @@ function FlowContent() {
                 padding: 4,
                 transition: "color 150ms ease",
               }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.88 }}
               title="Toggle sidebar"
             >
               <Menu className="w-6 h-6" />
-            </motion.button>
+            </button>
           </div>
 
           <div
@@ -621,46 +619,24 @@ function FlowContent() {
           >
             {sidebarOpen ? (
               <>
-                <div className="flex items-center gap-2">
-                  <motion.button
-                    onClick={addNode}
-                    className="flex-1 apple-button-secondary"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.96 }}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span className="text-[13px]">New Node</span>
-                  </motion.button>
-                  <motion.button
-                    onClick={onDownload}
-                    className="icon-btn w-11 h-11 shrink-0"
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.9 }}
-                    title="Download Image"
-                  >
-                    <Download className="w-4 h-4" />
-                  </motion.button>
-                </div>
 
                 <div className="flex-1 space-y-4">
                   {selectedElement ? (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       className="space-y-6"
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-widest text-black/50">
                           {selectedElement.type === "node" ? "Node" : "Edge"}
                         </span>
-                        <motion.button
+                        <button
                           onClick={() => setSelectedElement(null)}
                           className="icon-btn w-7 h-7"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.88 }}
                         >
                           <X className="w-3.5 h-3.5" />
-                        </motion.button>
+                        </button>
                       </div>
 
                       <div className="space-y-1.5">
@@ -801,6 +777,7 @@ function FlowContent() {
                                       const isDirected = !edge.markerEnd;
                                       return {
                                         ...edge,
+                                        animated: isDirected,
                                         markerEnd: isDirected
                                           ? {
                                               type: MarkerType.ArrowClosed,
@@ -827,54 +804,37 @@ function FlowContent() {
                         </div>
                       )}
 
-                      <motion.button
-                        onClick={deleteElement}
-                        className="danger-btn"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.96 }}
-                      >
+                      <button onClick={deleteElement} className="danger-btn">
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Delete</span>
-                      </motion.button>
+                      </button>
                     </motion.div>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
+                    <div className="flex flex-col gap-3">
+                      <div className="relative">
                         <textarea
                           value={prompt}
                           onChange={(e) => setPrompt(e.target.value)}
                           placeholder="Describe a narrative, system, or power structure to map..."
-                          className="apple-input w-full h-52 resize-none text-[13px] leading-relaxed"
+                          className="apple-input w-full h-52 resize-none text-[13px] leading-relaxed p-4"
                         />
                       </div>
 
-                      <motion.button
+                      <button
                         onClick={handleExtract}
                         disabled={isExtracting || !prompt.trim()}
                         className="apple-button-primary w-full"
-                        whileHover={
-                          !isExtracting && prompt.trim() ? { scale: 1.02 } : {}
-                        }
-                        whileTap={
-                          !isExtracting && prompt.trim() ? { scale: 0.97 } : {}
-                        }
                       >
                         <span className="text-[13px]">
                           {isExtracting
                             ? "Extracting..."
                             : "Extract Influence Map"}
                         </span>
-                      </motion.button>
+                      </button>
 
                       {nodes.length > 0 && !isMobile && (
                         <div className="space-y-3">
                           <hr className="border-t border-black/[0.06]" />
-                          <div className="flex items-center justify-end">
-                            <span className="text-[11px] text-black/40 tabular-nums">
-                              {nodes.length}n · {edges.length}e
-                            </span>
-                          </div>
-
                           <div className="space-y-0.5">
                             {[...nodes]
                               .sort(
@@ -884,12 +844,10 @@ function FlowContent() {
                               )
                               .slice(0, 6)
                               .map((node, i) => (
-                                <motion.button
+                                <button
                                   key={node.id}
                                   onClick={() => focusOnNode(node.id)}
                                   className="node-list-item"
-                                  whileHover={{ x: 3 }}
-                                  whileTap={{ scale: 0.97 }}
                                   title={node.data.label as string}
                                 >
                                   <span className="text-[10px] w-4 shrink-0 text-center text-black/25 tabular-nums">
@@ -901,16 +859,14 @@ function FlowContent() {
                                   <span className="text-[10px] shrink-0 tabular-nums text-black/30 pr-1">
                                     {node.data?.strength || 5}
                                   </span>
-                                </motion.button>
+                                </button>
                               ))}
                           </div>
 
-                          <motion.button
+                          <button
                             onClick={handleGenerate}
                             disabled={isGenerating}
                             className="apple-button-secondary w-full"
-                            whileHover={!isGenerating ? { scale: 1.02 } : {}}
-                            whileTap={!isGenerating ? { scale: 0.97 } : {}}
                           >
                             {isGenerating ? (
                               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -920,7 +876,7 @@ function FlowContent() {
                             <span className="text-[13px]">
                               Generate Analysis
                             </span>
-                          </motion.button>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -931,26 +887,22 @@ function FlowContent() {
                   <div className="pt-4">
                     <div className="flex items-center justify-end mb-3">
                       <div className="flex gap-1.5">
-                        <motion.button
+                        <button
                           onClick={handleCopy}
                           className="icon-btn w-7 h-7"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.88 }}
                         >
                           {copied ? (
                             <Check className="w-3.5 h-3.5" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
                           )}
-                        </motion.button>
-                        <motion.button
+                        </button>
+                        <button
                           onClick={() => setResult(null)}
                           className="icon-btn w-7 h-7"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.88 }}
                         >
                           <X className="w-3.5 h-3.5" />
-                        </motion.button>
+                        </button>
                       </div>
                     </div>
                     <div className="text-[13px] leading-relaxed markdown-body">
@@ -987,22 +939,12 @@ function FlowContent() {
             ) : (
               /* Mini Mode Icons */
               <div className="flex flex-col gap-3">
-                <motion.button
-                  onClick={addNode}
-                  className="icon-btn w-10 h-10"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.88 }}
-                  title="New Node"
-                >
-                  <Plus className="w-4 h-4" />
-                </motion.button>
+
                 {nodes.length > 0 && (
-                  <motion.button
+                  <button
                     onClick={handleGenerate}
                     disabled={isGenerating}
                     className="icon-btn-dark w-10 h-10"
-                    whileHover={!isGenerating ? { scale: 1.1 } : {}}
-                    whileTap={!isGenerating ? { scale: 0.88 } : {}}
                     title="Generate Analysis"
                   >
                     {isGenerating ? (
@@ -1010,17 +952,9 @@ function FlowContent() {
                     ) : (
                       <Sparkles className="w-4 h-4" />
                     )}
-                  </motion.button>
+                  </button>
                 )}
-                <motion.button
-                  onClick={onDownload}
-                  className="icon-btn w-10 h-10"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.88 }}
-                  title="Download Image"
-                >
-                  <Download className="w-4 h-4" />
-                </motion.button>
+
               </div>
             )}
           </div>
@@ -1079,29 +1013,23 @@ function FlowContent() {
             )}
           </ReactFlow>
 
-          {/* Mobile Action Buttons - Top Right */}
-          {isMobile && (
-            <div className="absolute top-4 right-4 flex flex-col gap-2 z-30">
-              <motion.button
-                onClick={addNode}
-                className="icon-btn w-12 h-12"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.88 }}
-                title="Add Node"
-              >
-                <Plus className="w-5 h-5" />
-              </motion.button>
-              <motion.button
-                onClick={onDownload}
-                className="icon-btn w-12 h-12"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.88 }}
-                title="Download Image"
-              >
-                <Download className="w-5 h-5" />
-              </motion.button>
-            </div>
-          )}
+          {/* Action Buttons - Top Right */}
+          <div className="absolute top-6 right-6 flex flex-col gap-3 z-30">
+            <button
+              onClick={addNode}
+              className="icon-btn w-12 h-12"
+              title="Add Node"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onDownload}
+              className="icon-btn w-12 h-12"
+              title="Download Image"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Mobile Analysis Result Overlay */}
           <AnimatePresence>
@@ -1118,26 +1046,19 @@ function FlowContent() {
                       Analysis
                     </span>
                     <div className="flex gap-1.5">
-                      <motion.button
-                        onClick={handleCopy}
-                        className="icon-btn w-8 h-8"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.88 }}
-                      >
+                      <button onClick={handleCopy} className="icon-btn w-8 h-8">
                         {copied ? (
                           <Check className="w-4 h-4" />
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
-                      </motion.button>
-                      <motion.button
+                      </button>
+                      <button
                         onClick={() => setResult(null)}
                         className="icon-btn w-8 h-8"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.88 }}
                       >
                         <X className="w-4 h-4" />
-                      </motion.button>
+                      </button>
                     </div>
                   </div>
                   <div className="text-sm leading-relaxed markdown-body pb-20">
@@ -1177,28 +1098,26 @@ function FlowContent() {
           <AnimatePresence>
             {isMobile && selectedElement && (
               <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="absolute inset-x-0 bottom-0 z-[80] bg-white/90 backdrop-blur-md p-6 safe-bottom"
                 style={{
                   borderRadius: "20px 20px 0 0",
                   boxShadow:
-                    "0 -4px 40px rgba(0,0,0,0.10), 0 0 60px rgba(100,60,255,0.07)",
+                    "0 -4px 40px rgba(0,0,0,0.10), 0 0 60px rgba(0,0,0,0.07)",
                 }}
               >
                 <div className="flex items-center justify-between mb-5">
                   <span className="text-[11px] uppercase tracking-widest text-black/50">
                     {selectedElement.type === "node" ? "Node" : "Edge"}
                   </span>
-                  <motion.button
+                  <button
                     onClick={() => setSelectedElement(null)}
                     className="icon-btn w-8 h-8"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.88 }}
                   >
                     <X className="w-4 h-4" />
-                  </motion.button>
+                  </button>
                 </div>
 
                 <div className="space-y-5">
@@ -1334,6 +1253,7 @@ function FlowContent() {
                                   const isDirected = !edge.markerEnd;
                                   return {
                                     ...edge,
+                                    animated: isDirected,
                                     markerEnd: isDirected
                                       ? {
                                           type: MarkerType.ArrowClosed,
@@ -1360,15 +1280,10 @@ function FlowContent() {
                     </div>
                   )}
 
-                  <motion.button
-                    onClick={deleteElement}
-                    className="danger-btn"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.96 }}
-                  >
+                  <button onClick={deleteElement} className="danger-btn">
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete</span>
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -1383,7 +1298,7 @@ function FlowContent() {
               style={{
                 borderRadius: 999,
                 boxShadow:
-                  "0 2px 16px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.07), 0 0 32px rgba(100,60,255,0.07)",
+                  "0 2px 16px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.07), 0 0 32px rgba(0,0,0,0.07)",
               }}
             >
               <textarea
@@ -1411,9 +1326,9 @@ function FlowContent() {
                   {nodes.length > 0 && (
                     <motion.button
                       key="analysis-btn"
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       onClick={handleGenerate}
                       disabled={isGenerating || isExtracting}
                       className="icon-btn-dark w-10 h-10"
@@ -1428,9 +1343,9 @@ function FlowContent() {
                   {(prompt.trim() !== "" || nodes.length === 0) && (
                     <motion.button
                       key="send-btn"
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       onClick={handleExtract}
                       disabled={isExtracting || isGenerating || !prompt.trim()}
                       className={cn(

@@ -1,13 +1,13 @@
 import { Node, Edge, Position } from '@xyflow/react';
 import dagre from 'dagre';
 
-export const getNodeSize = (mentions: number = 10) => {
-  return Math.max(180, 120 + (mentions / 100) * 350);
+export const getNodeSize = (strength: number = 5) => {
+  return Math.max(120, 100 + strength * 15);
 };
 
 export function getEdgeParams(source: Node, target: Node) {
-  const sSize = getNodeSize(source.data?.mentions as number);
-  const tSize = getNodeSize(target.data?.mentions as number);
+  const sSize = getNodeSize(source.data?.strength as number);
+  const tSize = getNodeSize(target.data?.strength as number);
 
   const sw = source.measured?.width ?? sSize;
   const sh = source.measured?.height ?? sSize;
@@ -73,7 +73,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
     const centerY = 0;
     
     if (direction === 'CIRCLE') {
-      const sizes = nodes.map(n => getNodeSize(n.data?.mentions as number));
+      const sizes = nodes.map(n => getNodeSize(n.data?.strength as number));
       const totalSize = sizes.reduce((a, b) => a + b, 0);
       const maxRadiusSum = Math.max(...sizes);
       
@@ -85,7 +85,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
       const radius = Math.max(minRadiusForSpacing, (1.5 * totalSize) / (2 * Math.PI), 1200);
       
       const newNodes = nodes.map((node, index) => {
-        const size = getNodeSize(node.data?.mentions as number);
+        const size = getNodeSize(node.data?.strength as number);
         const angle = (index / nodes.length) * 2 * Math.PI;
         
         return {
@@ -109,11 +109,11 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
       });
 
       const hubNode = nodes.find(n => n.id === hubNodeId);
-      const hubSize = getNodeSize(hubNode?.data?.mentions as number);
+      const hubSize = getNodeSize(hubNode?.data?.strength as number);
       const hubRadius = hubSize / 2;
 
       const newNodes = nodes.map((node) => {
-        const nodeSize = getNodeSize(node.data?.mentions as number);
+        const nodeSize = getNodeSize(node.data?.strength as number);
         
         if (node.id === hubNodeId) {
           return { ...node, position: { x: centerX - nodeSize / 2, y: centerY - nodeSize / 2 } };

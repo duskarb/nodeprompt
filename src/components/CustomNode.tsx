@@ -4,10 +4,10 @@ import { getNodeSize } from '../lib/flow-utils';
 import { cn } from '../lib/utils';
 
 export const CustomNode = ({ data, selected }: NodeProps) => {
-  const mentions = (data.mentions as number) || 10;
+  const strength = (data.strength as number) || 5;
   const highlighted = (data.highlighted as boolean) || false;
   const isAnyHighlighted = (data.isAnyHighlighted as boolean) || false;
-  const size = getNodeSize(mentions);
+  const size = getNodeSize(strength);
 
   // Font size scales with node size but stays readable
   const fontSize = Math.min(28, Math.max(22, size * 0.13));

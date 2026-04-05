@@ -1,35 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  --color-apple-blue: #007AFF;
-  --color-apple-indigo: #5856D6;
-  --color-apple-red: #FF3B30;
-  --color-apple-green: #34C759;
-  --color-apple-orange: #FF9500;
-  --color-apple-pink: #FF2D55;
-  --color-apple-teal: #5AC8FA;
-  --color-apple-yellow: #FFCC00;
-  --color-apple-gray-50: #F2F2F7;
-  --color-apple-gray-100: #E5E5EA;
-  --color-apple-gray-200: #D1D1D6;
-  --color-apple-gray-300: #C7C7CC;
-  --color-apple-gray-400: #AEAEB2;
-  --color-apple-gray-500: #8E8E93;
+  --color-apple-blue: #007aff;
+  --color-apple-indigo: #5856d6;
+  --color-apple-red: #ff3b30;
+  --color-apple-green: #34c759;
+  --color-apple-orange: #ff9500;
+  --color-apple-pink: #ff2d55;
+  --color-apple-teal: #5ac8fa;
+  --color-apple-yellow: #ffcc00;
+  --color-apple-gray-50: #f2f2f7;
+  --color-apple-gray-100: #e5e5ea;
+  --color-apple-gray-200: #d1d1d6;
+  --color-apple-gray-300: #c7c7cc;
+  --color-apple-gray-400: #aeaeb2;
+  --color-apple-gray-500: #8e8e93;
   --color-apple-gray-600: #636366;
-  --color-apple-gray-700: #48484A;
-  --color-apple-gray-800: #2C2C2E;
-  --color-apple-gray-900: #1C1C1E;
+  --color-apple-gray-700: #48484a;
+  --color-apple-gray-800: #2c2c2e;
+  --color-apple-gray-900: #1c1c1e;
   --color-apple-border: rgba(0, 0, 0, 0.1);
   --color-apple-accent: var(--apple-accent);
 
-  --font-sans: "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-sans:
+    "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Arial, sans-serif;
 }
 
 :root {
-  --apple-bg: #FFFFFF;
-  --apple-card: #FFFFFF;
+  --apple-bg: #ffffff;
+  --apple-card: #ffffff;
   --apple-text: #000000;
-  --apple-secondary-text: #8E8E93;
+  --apple-secondary-text: #8e8e93;
   --apple-accent: #000000;
   --apple-border: rgba(0, 0, 0, 0.08);
   --apple-surface: rgba(255, 255, 255, 0.7);
@@ -49,17 +51,22 @@ body {
   border-radius: 999px;
   border: none;
   background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.18), 0 0 0 0 rgba(100,80,255,0);
-  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.18),
+    0 0 0 0 rgba(100, 80, 255, 0);
+  transition:
+    box-shadow 200ms ease,
+    background 200ms ease;
 }
 .apple-button-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #2a2a2a 0%, #111 100%);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.22), 0 0 32px rgba(120,80,255,0.18), 0 0 16px rgba(0,120,255,0.12);
-  transform: translateY(-1px);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.22),
+    0 0 32px rgba(0, 0, 0, 0.18),
+    0 0 16px rgba(0, 0, 0, 0.12);
 }
 .apple-button-primary:active:not(:disabled) {
-  transform: scale(0.97) translateY(0);
-  box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
 }
 .apple-button-primary:disabled {
   opacity: 0.4;
@@ -72,17 +79,21 @@ body {
   border-radius: 999px;
   border: none;
   background: rgba(245, 245, 247, 1);
-  box-shadow: 0 1px 6px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.07);
-  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
+  box-shadow:
+    0 1px 6px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.07);
+  transition:
+    box-shadow 200ms ease,
+    background 200ms ease;
 }
 .apple-button-secondary:hover:not(:disabled) {
   background: rgba(235, 235, 240, 1);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.10), 0 0 28px rgba(120,80,255,0.10), 0 0 0 1px rgba(0,0,0,0.08);
-  transform: translateY(-1px);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 .apple-button-secondary:active:not(:disabled) {
-  transform: scale(0.97) translateY(0);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 .apple-button-secondary:disabled {
   opacity: 0.4;
@@ -97,19 +108,23 @@ body {
   border-radius: 50%;
   border: none;
   background: rgba(245, 245, 247, 1);
-  box-shadow: 0 1px 6px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);
-  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
+  box-shadow:
+    0 1px 6px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+  transition:
+    box-shadow 200ms ease,
+    background 200ms ease;
   cursor: pointer;
   color: #1a1a1a;
 }
 .icon-btn:hover {
   background: rgba(228, 228, 235, 1);
-  box-shadow: 0 4px 18px rgba(0,0,0,0.10), 0 0 24px rgba(120,80,255,0.13), 0 0 0 1px rgba(0,0,0,0.08);
-  transform: translateY(-1px) scale(1.04);
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 .icon-btn:active {
-  transform: scale(0.93);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* === ICON BUTTON DARK === */
@@ -120,18 +135,21 @@ body {
   border-radius: 50%;
   border: none;
   background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.18), 0 0 20px rgba(80,60,200,0.10);
-  transition: box-shadow 200ms ease, transform 100ms ease;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.18),
+    0 0 20px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 200ms ease;
   cursor: pointer;
   color: white;
 }
 .icon-btn-dark:hover {
-  box-shadow: 0 4px 22px rgba(0,0,0,0.22), 0 0 32px rgba(120,80,255,0.20), 0 0 16px rgba(0,120,255,0.14);
-  transform: translateY(-1px) scale(1.06);
+  box-shadow:
+    0 4px 22px rgba(0, 0, 0, 0.22),
+    0 0 32px rgba(0, 0, 0, 0.2),
+    0 0 16px rgba(0, 0, 0, 0.14);
 }
 .icon-btn-dark:active {
-  transform: scale(0.93);
-  box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* === INPUT === */
@@ -139,20 +157,26 @@ body {
   @apply bg-white px-4 py-2.5 focus:outline-none text-[14px];
   border-radius: 12px;
   border: none;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 1px 4px rgba(0, 0, 0, 0.06);
   transition: box-shadow 200ms ease;
 }
 .apple-input:focus {
-  box-shadow: 0 0 0 1.5px rgba(80,60,200,0.35), 0 2px 12px rgba(80,60,200,0.10);
+  box-shadow:
+    0 0 0 1.5px rgba(0, 0, 0, 0.35),
+    0 2px 12px rgba(0, 0, 0, 0.15);
 }
 .apple-input::placeholder {
-  color: #AEAEB2;
+  color: #aeaeb2;
 }
 
 .apple-card {
   @apply bg-white overflow-hidden;
   border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+  box-shadow:
+    0 2px 16px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 /* === DANGER BUTTON === */
@@ -163,19 +187,21 @@ body {
   border-radius: 999px;
   border: none;
   background: rgba(255, 59, 48, 0.08);
-  color: #FF3B30;
-  box-shadow: 0 0 0 1px rgba(255,59,48,0.15);
-  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
+  color: #ff3b30;
+  box-shadow: 0 0 0 1px rgba(255, 59, 48, 0.15);
+  transition:
+    box-shadow 200ms ease,
+    background 200ms ease;
   cursor: pointer;
 }
 .danger-btn:hover {
   background: rgba(255, 59, 48, 0.14);
-  box-shadow: 0 4px 16px rgba(255,59,48,0.18), 0 0 0 1px rgba(255,59,48,0.2);
-  transform: translateY(-1px);
+  box-shadow:
+    0 4px 16px rgba(255, 59, 48, 0.18),
+    0 0 0 1px rgba(255, 59, 48, 0.2);
 }
 .danger-btn:active {
-  transform: scale(0.97);
-  box-shadow: 0 1px 4px rgba(255,59,48,0.10);
+  box-shadow: 0 1px 4px rgba(255, 59, 48, 0.1);
 }
 
 /* === TOGGLE SWITCH === */
@@ -186,15 +212,19 @@ body {
   border: none;
   position: relative;
   cursor: pointer;
-  transition: background 200ms ease, box-shadow 200ms ease;
+  transition:
+    background 200ms ease,
+    box-shadow 200ms ease;
 }
 .toggle-track.off {
-  background: rgba(220,220,228,1);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  background: rgba(220, 220, 228, 1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 .toggle-track.on {
-  background: linear-gradient(135deg, #3a3aff 0%, #8040ff 100%);
-  box-shadow: 0 2px 12px rgba(100,60,255,0.30), 0 0 20px rgba(100,60,255,0.15);
+  background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(0, 0, 0, 0.15);
 }
 .toggle-thumb {
   position: absolute;
@@ -203,11 +233,15 @@ body {
   height: 18px;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-  transition: left 200ms cubic-bezier(0.34,1.4,0.64,1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  transition: left 200ms cubic-bezier(0.34, 1.4, 0.64, 1);
 }
-.toggle-track.off .toggle-thumb { left: 3px; }
-.toggle-track.on .toggle-thumb { left: 23px; }
+.toggle-track.off .toggle-thumb {
+  left: 3px;
+}
+.toggle-track.on .toggle-thumb {
+  left: 23px;
+}
 
 /* === NODE LIST ITEM === */
 .node-list-item {
@@ -221,16 +255,16 @@ body {
   border: none;
   cursor: pointer;
   text-align: left;
-  transition: background 150ms ease, box-shadow 150ms ease, transform 80ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
   color: #1a1a1a;
 }
 .node-list-item:hover {
-  background: rgba(245,245,250,1);
-  box-shadow: 0 2px 12px rgba(100,60,255,0.08), 0 0 0 1px rgba(0,0,0,0.05);
-  transform: translateX(2px);
-}
-.node-list-item:active {
-  transform: scale(0.98);
+  background: rgba(245, 245, 250, 1);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 /* React Flow Controls — circular */
@@ -246,20 +280,23 @@ body {
 .react-flow__controls button {
   border-radius: 50% !important;
   border: none !important;
-  background: rgba(245,245,247,1) !important;
+  background: rgba(245, 245, 247, 1) !important;
   width: 32px !important;
   height: 32px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06) !important;
-  transition: box-shadow 200ms ease, transform 100ms ease !important;
+  box-shadow:
+    0 1px 6px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+  transition: box-shadow 200ms ease !important;
 }
 
 .react-flow__controls button:hover {
-  background: rgba(235,235,242,1) !important;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.12), 0 0 20px rgba(100,60,255,0.12) !important;
-  transform: scale(1.08) !important;
+  background: rgba(235, 235, 242, 1) !important;
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.15),
+    0 0 20px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Range slider */
@@ -268,7 +305,7 @@ input[type="range"] {
   appearance: none;
   height: 4px;
   border-radius: 999px;
-  background: rgba(0,0,0,0.12);
+  background: rgba(0, 0, 0, 0.12);
   outline: none;
   cursor: pointer;
 }
@@ -279,13 +316,12 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   border-radius: 50%;
   background: #1a1a1a;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.20);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition: box-shadow 150ms ease;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 2px 10px rgba(100,60,255,0.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 input[type="range"]::-moz-range-thumb {
   width: 16px;
@@ -293,7 +329,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
   background: #1a1a1a;
   border: none;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.20);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
   cursor: pointer;
 }
 

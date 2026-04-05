@@ -1013,13 +1013,13 @@ function FlowContent() {
             {!isMobile && (
               <MiniMap
                 nodeComponent={MiniMapNode}
-                nodeColor={() => "#FFFFFF"}
-                maskColor="rgba(0, 0, 0, 0.7)"
-                className="!rounded-xl !border-none"
+                nodeColor={() => isDarkMode ? "#FFFFFF" : "#000000"}
+                maskColor={isDarkMode ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)"}
+                className="!rounded-xl !border-none overflow-hidden"
                 style={{
-                  background: "#0a0a0a",
-                  boxShadow:
-                    "0 0 12px rgba(255,255,255,0.08), 0 0 0 1px rgba(255,255,255,0.06)",
+                  background: "var(--apple-card)",
+                  boxShadow: "0 0 16px var(--glow-base), 0 0 0 1px var(--glow-inset)",
+                  overflow: "hidden",
                 }}
               />
             )}

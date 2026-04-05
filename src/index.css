@@ -43,87 +43,261 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* Flat button styles — no radius, inversion on hover */
+/* === PRIMARY BUTTON — pill, dark, glow shadow === */
 .apple-button-primary {
-  @apply bg-black text-white px-6 h-11 font-normal flex items-center justify-center gap-2;
-  border: 1px solid #000000;
-  border-radius: 0;
-  transition: background 80ms linear, color 80ms linear;
+  @apply text-white px-6 h-11 font-normal flex items-center justify-center gap-2;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18), 0 0 0 0 rgba(100,80,255,0);
+  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
 }
-.apple-button-primary:hover {
-  @apply bg-white text-black;
+.apple-button-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2a2a2a 0%, #111 100%);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.22), 0 0 32px rgba(120,80,255,0.18), 0 0 16px rgba(0,120,255,0.12);
+  transform: translateY(-1px);
+}
+.apple-button-primary:active:not(:disabled) {
+  transform: scale(0.97) translateY(0);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.15);
 }
 .apple-button-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
+/* === SECONDARY BUTTON — pill, light, subtle glow === */
 .apple-button-secondary {
-  @apply bg-white text-black px-6 h-11 font-normal flex items-center justify-center gap-2;
-  border: 1px solid #000000;
-  border-radius: 0;
-  transition: background 80ms linear, color 80ms linear;
+  @apply text-black px-6 h-11 font-normal flex items-center justify-center gap-2;
+  border-radius: 999px;
+  border: none;
+  background: rgba(245, 245, 247, 1);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.07);
+  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
 }
 .apple-button-secondary:hover:not(:disabled) {
-  @apply bg-black text-white;
+  background: rgba(235, 235, 240, 1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10), 0 0 28px rgba(120,80,255,0.10), 0 0 0 1px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+.apple-button-secondary:active:not(:disabled) {
+  transform: scale(0.97) translateY(0);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 .apple-button-secondary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
+/* === ICON BUTTON — circle === */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(245, 245, 247, 1);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);
+  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
+  cursor: pointer;
+  color: #1a1a1a;
+}
+.icon-btn:hover {
+  background: rgba(228, 228, 235, 1);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.10), 0 0 24px rgba(120,80,255,0.13), 0 0 0 1px rgba(0,0,0,0.08);
+  transform: translateY(-1px) scale(1.04);
+}
+.icon-btn:active {
+  transform: scale(0.93);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* === ICON BUTTON DARK === */
+.icon-btn-dark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18), 0 0 20px rgba(80,60,200,0.10);
+  transition: box-shadow 200ms ease, transform 100ms ease;
+  cursor: pointer;
+  color: white;
+}
+.icon-btn-dark:hover {
+  box-shadow: 0 4px 22px rgba(0,0,0,0.22), 0 0 32px rgba(120,80,255,0.20), 0 0 16px rgba(0,120,255,0.14);
+  transform: translateY(-1px) scale(1.06);
+}
+.icon-btn-dark:active {
+  transform: scale(0.93);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+}
+
+/* === INPUT === */
 .apple-input {
-  @apply bg-white border border-black px-4 py-2.5 focus:outline-none text-[14px];
-  border-radius: 0;
-  transition: none;
+  @apply bg-white px-4 py-2.5 focus:outline-none text-[14px];
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+  transition: box-shadow 200ms ease;
+}
+.apple-input:focus {
+  box-shadow: 0 0 0 1.5px rgba(80,60,200,0.35), 0 2px 12px rgba(80,60,200,0.10);
 }
 .apple-input::placeholder {
   color: #AEAEB2;
 }
 
 .apple-card {
-  @apply bg-white border border-black overflow-hidden;
-  border-radius: 0;
+  @apply bg-white overflow-hidden;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
 }
 
-/* Sidebar */
-.apple-sidebar {
-  @apply bg-white border-r border-black;
+/* === DANGER BUTTON === */
+.danger-btn {
+  @apply flex items-center justify-center gap-2 text-[13px];
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 59, 48, 0.08);
+  color: #FF3B30;
+  box-shadow: 0 0 0 1px rgba(255,59,48,0.15);
+  transition: box-shadow 200ms ease, transform 100ms ease, background 200ms ease;
+  cursor: pointer;
+}
+.danger-btn:hover {
+  background: rgba(255, 59, 48, 0.14);
+  box-shadow: 0 4px 16px rgba(255,59,48,0.18), 0 0 0 1px rgba(255,59,48,0.2);
+  transform: translateY(-1px);
+}
+.danger-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 4px rgba(255,59,48,0.10);
 }
 
-/* React Flow Controls — square */
+/* === TOGGLE SWITCH === */
+.toggle-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  position: relative;
+  cursor: pointer;
+  transition: background 200ms ease, box-shadow 200ms ease;
+}
+.toggle-track.off {
+  background: rgba(220,220,228,1);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+}
+.toggle-track.on {
+  background: linear-gradient(135deg, #3a3aff 0%, #8040ff 100%);
+  box-shadow: 0 2px 12px rgba(100,60,255,0.30), 0 0 20px rgba(100,60,255,0.15);
+}
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  transition: left 200ms cubic-bezier(0.34,1.4,0.64,1);
+}
+.toggle-track.off .toggle-thumb { left: 3px; }
+.toggle-track.on .toggle-thumb { left: 23px; }
+
+/* === NODE LIST ITEM === */
+.node-list-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 80ms ease;
+  color: #1a1a1a;
+}
+.node-list-item:hover {
+  background: rgba(245,245,250,1);
+  box-shadow: 0 2px 12px rgba(100,60,255,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+  transform: translateX(2px);
+}
+.node-list-item:active {
+  transform: scale(0.98);
+}
+
+/* React Flow Controls — circular */
 .react-flow__controls {
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
+  gap: 6px !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
 .react-flow__controls button {
-  border-radius: 0 !important;
-  border: 1px solid black !important;
-  background: white !important;
-  width: 28px !important;
-  height: 28px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(245,245,247,1) !important;
+  width: 32px !important;
+  height: 32px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: background 80ms linear !important;
-  box-shadow: none !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06) !important;
+  transition: box-shadow 200ms ease, transform 100ms ease !important;
 }
 
 .react-flow__controls button:hover {
-  background: black !important;
+  background: rgba(235,235,242,1) !important;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.12), 0 0 20px rgba(100,60,255,0.12) !important;
+  transform: scale(1.08) !important;
 }
 
-.react-flow__controls button:hover svg {
-  fill: white !important;
-  stroke: white !important;
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.12);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.20);
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 2px 10px rgba(100,60,255,0.25);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  border: none;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.20);
+  cursor: pointer;
 }
 
-/* Node — circular is intentional for graph semantics */
+/* Node */
 .apple-node {
-  @apply rounded-full border border-black flex items-center justify-center text-center bg-white;
+  @apply rounded-full flex items-center justify-center text-center bg-white;
 }

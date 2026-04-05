@@ -29,7 +29,7 @@ export const LombardiEdge = ({ id, source, target, style = {}, markerEnd, label,
         markerEnd={markerEnd}
         style={{
           ...style,
-          stroke: '#000000',
+          stroke: selected ? 'rgba(100,60,255,0.6)' : 'rgba(0,0,0,0.18)',
           strokeWidth: selected ? 2 : 1,
         }}
       />
@@ -39,15 +39,16 @@ export const LombardiEdge = ({ id, source, target, style = {}, markerEnd, label,
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 400,
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
               letterSpacing: '-0.01em',
               pointerEvents: 'all',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'rgba(255,255,255,0.88)',
               color: '#000000',
               padding: '2px 8px',
-              border: `1px solid #000000`,
+              borderRadius: 6,
+              boxShadow: '0 1px 6px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
               whiteSpace: 'nowrap',
               zIndex: 1000,
             }}

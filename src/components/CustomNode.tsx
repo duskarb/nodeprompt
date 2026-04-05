@@ -10,27 +10,34 @@ export const CustomNode = ({ data, selected }: NodeProps) => {
   const size = getNodeSize(mentions);
 
   // Font size scales with node size but stays readable
-  const fontSize = Math.min(14, Math.max(11, size * 0.065));
+  const fontSize = Math.min(28, Math.max(22, size * 0.13));
 
   // Three visual states:
   // selected/highlighted → black fill, white text (interaction)
   // default   → white fill, black text
-  const bgColor = selected || highlighted ? '#000000' : '#FFFFFF';
-  const textColor = selected || highlighted ? '#FFFFFF' : '#000000';
-  const borderWidth = selected || highlighted ? 2 : 1;
+  const bgColor = selected || highlighted ? '#1a1a1a' : '#FFFFFF';
+  const textColor = selected || highlighted ? '#FFFFFF' : '#1a1a1a';
   const opacity = isAnyHighlighted && !highlighted ? 0.2 : 1;
   const scale = highlighted ? 1.1 : 1;
+
+  const boxShadow = selected
+    ? '0 0 0 3px rgba(100,60,255,0.50), 0 8px 32px rgba(100,60,255,0.22), 0 2px 16px rgba(0,0,0,0.12)'
+    : highlighted
+    ? '0 0 0 2.5px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.10)'
+    : '0 2px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.07)';
 
   return (
     <div
       className={cn("flex flex-col items-center justify-center group relative")}
-      style={{ 
-        zIndex: 10, 
-        width: size, 
+      style={{
+        zIndex: 10,
+        width: size,
         height: size,
         opacity,
         transform: `scale(${scale})`,
-        transition: 'opacity 200ms ease, transform 200ms ease'
+        borderRadius: '50%',
+        boxShadow,
+        transition: 'opacity 200ms ease, transform 200ms ease, box-shadow 200ms ease'
       }}
     >
       <Handle
@@ -71,8 +78,7 @@ export const CustomNode = ({ data, selected }: NodeProps) => {
           height: '100%',
           backgroundColor: bgColor,
           color: textColor,
-          borderWidth,
-          borderColor: '#000000',
+          borderWidth: 0,
           fontSize,
           fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
           fontWeight: 400,

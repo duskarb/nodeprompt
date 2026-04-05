@@ -183,6 +183,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
             const distToCenter = Math.sqrt(dx*dx + dy*dy) || 1;
             // Pull lightly toward center to keep tight clusters
             node.vx -= (dx / distToCenter) * (distToCenter * 0.02);
+            node.vy -= (dy / distToCenter) * (distToCenter * 0.02);
 
             const v = Math.sqrt(node.vx * node.vx + node.vy * node.vy) || 1;
             const limitedV = Math.min(v, temperature);

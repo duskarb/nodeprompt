@@ -237,7 +237,7 @@ function FlowContent() {
     (params: Connection) => {
       const newEdge = {
         ...params,
-        id: `e-${params.source}-${params.target}`,
+        id: `e-${params.source}-${params.target}-${Date.now()}`,
         label: "Connection",
         type: "lombardi",
         animated: true,
@@ -276,7 +276,7 @@ function FlowContent() {
 
       const initialEdges: Edge[] = extractedEdges.map(
         (e: any, idx: number) => ({
-          id: `e-${e.source}-${e.target}`,
+          id: `e-${e.source}-${e.target}-${idx}`,
           source: e.source,
           target: e.target,
           label: e.label,

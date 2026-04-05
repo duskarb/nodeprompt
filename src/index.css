@@ -9,32 +9,49 @@
   --color-apple-pink: #ff2d55;
   --color-apple-teal: #5ac8fa;
   --color-apple-yellow: #ffcc00;
-  --color-apple-gray-50: #f2f2f7;
-  --color-apple-gray-100: #e5e5ea;
-  --color-apple-gray-200: #d1d1d6;
-  --color-apple-gray-300: #c7c7cc;
-  --color-apple-gray-400: #aeaeb2;
-  --color-apple-gray-500: #8e8e93;
-  --color-apple-gray-600: #636366;
-  --color-apple-gray-700: #48484a;
-  --color-apple-gray-800: #2c2c2e;
-  --color-apple-gray-900: #1c1c1e;
-  --color-apple-border: rgba(0, 0, 0, 0.1);
-  --color-apple-accent: var(--apple-accent);
-
+  
+  --color-apple-bg: var(--apple-bg);
+  --color-apple-text: var(--apple-text);
+  
   --font-sans:
     "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Arial, sans-serif;
 }
 
 :root {
-  --apple-bg: #ffffff;
-  --apple-card: #ffffff;
+  /* LIGHT MODE */
+  --apple-bg: #FFFFFF;
+  --apple-card: #FFFFFF;
   --apple-text: #000000;
-  --apple-secondary-text: #8e8e93;
-  --apple-accent: #000000;
-  --apple-border: rgba(0, 0, 0, 0.08);
-  --apple-surface: rgba(255, 255, 255, 0.7);
+  --apple-secondary-text: #000000;
+  --apple-surface: #FFFFFF;
+  
+  /* Black glow logic */
+  --glow-base: rgba(0, 0, 0, 0.15);
+  --glow-hover: rgba(0, 0, 0, 0.4);
+  --glow-strong: rgba(0, 0, 0, 0.2);
+  --glow-inset: rgba(0, 0, 0, 0.08);
+
+  --toggle-track-off: rgba(0, 0, 0, 0.1);
+  --toggle-track-on: rgba(0, 0, 0, 0.8);
+}
+
+.dark {
+  /* DARK MODE */
+  --apple-bg: #000000;
+  --apple-card: #000000;
+  --apple-text: #FFFFFF;
+  --apple-secondary-text: #FFFFFF;
+  --apple-surface: #000000;
+  
+  /* White glow logic */
+  --glow-base: rgba(255, 255, 255, 0.15);
+  --glow-hover: rgba(255, 255, 255, 0.4);
+  --glow-strong: rgba(255, 255, 255, 0.2);
+  --glow-inset: rgba(255, 255, 255, 0.15);
+
+  --toggle-track-off: rgba(255, 255, 255, 0.1);
+  --toggle-track-on: rgba(255, 255, 255, 0.8);
 }
 
 body {
@@ -45,86 +62,66 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* === PRIMARY BUTTON — pill, dark, glow shadow === */
+/* === PRIMARY BUTTON === */
 .apple-button-primary {
-  @apply text-white px-6 h-11 font-normal flex items-center justify-center gap-2;
+  @apply px-6 h-11 uppercase tracking-wider font-bold text-[13px] flex items-center justify-center gap-2;
+  background-color: var(--apple-text);
+  color: var(--apple-bg);
   border-radius: 999px;
   border: none;
-  background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
-  box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.18),
-    0 0 0 0 rgba(100, 80, 255, 0);
-  transition:
-    box-shadow 200ms ease,
-    background 200ms ease;
+  box-shadow: 0 0 12px var(--glow-base);
+  transition: all 200ms ease;
 }
 .apple-button-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2a2a2a 0%, #111 100%);
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.22),
-    0 0 32px rgba(0, 0, 0, 0.18),
-    0 0 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 24px var(--glow-hover);
 }
 .apple-button-primary:active:not(:disabled) {
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+  transform: scale(0.98);
+  box-shadow: 0 0 8px var(--glow-base);
 }
 .apple-button-primary:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-/* === SECONDARY BUTTON — pill, light, subtle glow === */
+/* === SECONDARY BUTTON === */
 .apple-button-secondary {
-  @apply text-black px-6 h-11 font-normal flex items-center justify-center gap-2;
+  @apply bg-transparent px-6 h-11 uppercase tracking-wider font-bold text-[13px] flex items-center justify-center gap-2;
+  color: var(--apple-text);
   border-radius: 999px;
   border: none;
-  background: rgba(245, 245, 247, 1);
-  box-shadow:
-    0 1px 6px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(0, 0, 0, 0.07);
-  transition:
-    box-shadow 200ms ease,
-    background 200ms ease;
+  box-shadow: 0 0 8px var(--glow-base), inset 0 0 4px var(--glow-inset);
+  transition: all 200ms ease;
 }
 .apple-button-secondary:hover:not(:disabled) {
-  background: rgba(235, 235, 240, 1);
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 16px var(--glow-hover), inset 0 0 8px var(--glow-strong);
 }
 .apple-button-secondary:active:not(:disabled) {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: scale(0.98);
 }
 .apple-button-secondary:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-/* === ICON BUTTON — circle === */
+/* === ICON BUTTON === */
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   border: none;
-  background: rgba(245, 245, 247, 1);
-  box-shadow:
-    0 1px 6px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(0, 0, 0, 0.06);
-  transition:
-    box-shadow 200ms ease,
-    background 200ms ease;
+  background: transparent;
+  color: var(--apple-text);
+  box-shadow: 0 0 10px var(--glow-base);
+  transition: all 200ms ease;
   cursor: pointer;
-  color: #1a1a1a;
 }
 .icon-btn:hover {
-  background: rgba(228, 228, 235, 1);
-  box-shadow:
-    0 4px 18px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 20px var(--glow-hover);
 }
 .icon-btn:active {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: scale(0.94);
 }
 
 /* === ICON BUTTON DARK === */
@@ -134,74 +131,62 @@ body {
   justify-content: center;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.18),
-    0 0 20px rgba(0, 0, 0, 0.15);
-  transition: box-shadow 200ms ease;
+  background: var(--glow-inset);
+  color: var(--apple-text);
+  box-shadow: 0 0 12px var(--glow-strong);
+  transition: all 200ms ease;
   cursor: pointer;
-  color: white;
 }
 .icon-btn-dark:hover {
-  box-shadow:
-    0 4px 22px rgba(0, 0, 0, 0.22),
-    0 0 32px rgba(0, 0, 0, 0.2),
-    0 0 16px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 0 24px var(--glow-hover);
+  background: var(--glow-strong);
 }
 .icon-btn-dark:active {
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+  transform: scale(0.94);
 }
 
 /* === INPUT === */
 .apple-input {
-  @apply bg-white px-4 py-2.5 focus:outline-none text-[14px];
+  @apply bg-transparent px-4 py-2.5 focus:outline-none text-[14px];
   border-radius: 12px;
   border: none;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.1),
-    0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0 8px var(--glow-base), inset 0 0 4px var(--glow-inset);
+  color: var(--apple-text);
   transition: box-shadow 200ms ease;
 }
 .apple-input:focus {
-  box-shadow:
-    0 0 0 1.5px rgba(0, 0, 0, 0.35),
-    0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 16px var(--glow-hover), inset 0 0 6px var(--glow-strong);
 }
 .apple-input::placeholder {
-  color: #aeaeb2;
+  color: #888;
 }
 
 .apple-card {
-  @apply bg-white overflow-hidden;
+  background-color: var(--apple-bg);
+  overflow: hidden;
   border-radius: 16px;
-  box-shadow:
-    0 2px 16px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  border: none;
+  box-shadow: 0 0 32px var(--glow-base);
 }
 
 /* === DANGER BUTTON === */
 .danger-btn {
-  @apply flex items-center justify-center gap-2 text-[13px];
+  @apply flex items-center justify-center gap-2 text-[13px] uppercase tracking-wider font-bold;
   width: 100%;
   padding: 10px 16px;
   border-radius: 999px;
   border: none;
-  background: rgba(255, 59, 48, 0.08);
+  background: transparent;
   color: #ff3b30;
-  box-shadow: 0 0 0 1px rgba(255, 59, 48, 0.15);
-  transition:
-    box-shadow 200ms ease,
-    background 200ms ease;
+  box-shadow: 0 0 10px rgba(255, 59, 48, 0.2);
+  transition: all 200ms ease;
   cursor: pointer;
 }
 .danger-btn:hover {
-  background: rgba(255, 59, 48, 0.14);
-  box-shadow:
-    0 4px 16px rgba(255, 59, 48, 0.18),
-    0 0 0 1px rgba(255, 59, 48, 0.2);
+  box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
 }
 .danger-btn:active {
-  box-shadow: 0 1px 4px rgba(255, 59, 48, 0.1);
+  transform: scale(0.98);
 }
 
 /* === TOGGLE SWITCH === */
@@ -212,19 +197,16 @@ body {
   border: none;
   position: relative;
   cursor: pointer;
-  transition:
-    background 200ms ease,
-    box-shadow 200ms ease;
+  background: var(--toggle-track-off);
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
+  transition: background 200ms ease, box-shadow 200ms ease;
 }
-.toggle-track.off {
-  background: rgba(220, 220, 228, 1);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+.dark .toggle-track {
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
 }
 .toggle-track.on {
-  background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 100%);
-  box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(0, 0, 0, 0.15);
+  background: var(--toggle-track-on);
+  box-shadow: 0 0 12px var(--glow-hover);
 }
 .toggle-thumb {
   position: absolute;
@@ -232,9 +214,13 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: white;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  border: none;
+  background: var(--apple-bg);
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
   transition: left 200ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.toggle-track.on .toggle-thumb {
+  background: var(--apple-bg);
 }
 .toggle-track.off .toggle-thumb {
   left: 3px;
@@ -250,24 +236,20 @@ body {
   align-items: center;
   gap: 12px;
   padding: 8px 10px;
-  border-radius: 10px;
-  background: transparent;
+  border-radius: 8px;
   border: none;
+  background: transparent;
   cursor: pointer;
   text-align: left;
-  transition:
-    background 150ms ease,
-    box-shadow 150ms ease;
-  color: #1a1a1a;
+  transition: box-shadow 200ms ease, background 200ms ease;
+  color: var(--apple-text);
 }
 .node-list-item:hover {
-  background: rgba(245, 245, 250, 1);
-  box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  background: var(--glow-inset);
+  box-shadow: 0 0 12px var(--glow-base);
 }
 
-/* React Flow Controls — circular */
+/* React Flow Controls */
 .react-flow__controls {
   display: flex !important;
   flex-direction: column !important;
@@ -280,34 +262,32 @@ body {
 .react-flow__controls button {
   border-radius: 50% !important;
   border: none !important;
-  background: rgba(245, 245, 247, 1) !important;
+  background: var(--apple-text) !important;
   width: 32px !important;
   height: 32px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow:
-    0 1px 6px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(0, 0, 0, 0.06) !important;
-  transition: box-shadow 200ms ease !important;
+  box-shadow: 0 0 8px var(--glow-base) !important;
+  transition: all 200ms ease !important;
+  color: var(--apple-bg) !important;
 }
-
 .react-flow__controls button:hover {
-  background: rgba(235, 235, 242, 1) !important;
-  box-shadow:
-    0 4px 18px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 0 16px var(--glow-hover) !important;
+}
+.react-flow__controls button path {
+  fill: currentColor !important;
 }
 
 /* Range slider */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.12);
+  height: 2px;
+  background: var(--glow-hover);
   outline: none;
   cursor: pointer;
+  box-shadow: 0 0 4px var(--glow-strong);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -315,25 +295,26 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #1a1a1a;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  border: none;
+  background: var(--apple-text);
+  box-shadow: 0 0 8px var(--glow-base);
   cursor: pointer;
-  transition: box-shadow 150ms ease;
+  transition: box-shadow 200ms ease;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 16px var(--glow-hover);
 }
 input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #1a1a1a;
   border: none;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  background: var(--apple-text);
+  box-shadow: 0 0 8px var(--glow-base);
   cursor: pointer;
 }
 
 /* Node */
 .apple-node {
-  @apply rounded-full flex items-center justify-center text-center bg-white;
+  @apply rounded-full flex items-center justify-center text-center;
 }

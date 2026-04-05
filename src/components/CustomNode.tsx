@@ -1,30 +1,63 @@
-import React from 'react';
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import React, { useState } from 'react';
+import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { getNodeSize } from '../lib/flow-utils';
 import { cn } from '../lib/utils';
+import { ThemeContext } from '../App';
 
-export const CustomNode = ({ data, selected }: NodeProps) => {
+export const CustomNode = ({ id, data, selected }: NodeProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(data.label as string);
+  const { setNodes } = useReactFlow();
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditValue(data.label as string);
+  };
+
+  const submitEdit = () => {
+    setIsEditing(false);
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.id === id) {
+          return { ...n, data: { ...n.data, label: editValue } };
+        }
+        return n;
+      })
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      submitEdit();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditValue(data.label as string);
+    }
+  };
   const strength = (data.strength as number) || 5;
   const highlighted = (data.highlighted as boolean) || false;
   const isAnyHighlighted = (data.isAnyHighlighted as boolean) || false;
   const size = getNodeSize(strength);
+  const { isDarkMode } = React.useContext(ThemeContext);
 
   // Font size scales with node size but stays readable
   const fontSize = Math.min(28, Math.max(22, size * 0.13));
 
-  // Three visual states:
-  // selected/highlighted → black fill, white text (interaction)
-  // default   → white fill, black text
-  const bgColor = selected || highlighted ? '#1a1a1a' : '#FFFFFF';
-  const textColor = selected || highlighted ? '#FFFFFF' : '#1a1a1a';
+  // Three visual states (Dark Mode / Light Mode):
+  const bgColor = isDarkMode 
+    ? (selected || highlighted ? '#111111' : '#000000') 
+    : (selected || highlighted ? '#EAEAEA' : '#FFFFFF');
+  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const opacity = isAnyHighlighted && !highlighted ? 0.2 : 1;
   const scale = highlighted ? 1.1 : 1;
 
+  const c = isDarkMode ? '255,255,255' : '0,0,0';
   const boxShadow = selected
-    ? '0 0 0 3px rgba(100,60,255,0.50), 0 8px 32px rgba(100,60,255,0.22), 0 2px 16px rgba(0,0,0,0.12)'
+    ? `0 0 24px rgba(${c},0.6), inset 0 0 12px rgba(${c},0.2)`
     : highlighted
-    ? '0 0 0 2.5px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.10)'
-    : '0 2px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.07)';
+    ? `0 0 16px rgba(${c},0.4), inset 0 0 8px rgba(${c},0.1)`
+    : `0 0 8px rgba(${c},0.15), inset 0 0 4px rgba(${c},0.05)`;
 
   return (
     <div
@@ -93,13 +126,26 @@ export const CustomNode = ({ data, selected }: NodeProps) => {
         <div
           className="w-[72%] h-[72%] rounded-full flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing"
           style={{ pointerEvents: 'auto' }}
+          onDoubleClick={handleDoubleClick}
         >
-          <span
-            className="whitespace-normal break-words max-w-full max-h-full px-2 flex items-center justify-center text-center"
-            style={{ overflow: 'hidden' }}
-          >
-            {data.label as string}
-          </span>
+          {isEditing ? (
+            <input
+              autoFocus
+              className="bg-transparent text-center focus:outline-none w-full h-full px-2 pointer-events-auto"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={submitEdit}
+              style={{ color: textColor }}
+            />
+          ) : (
+            <span
+              className="whitespace-normal break-words max-w-full max-h-full px-2 flex items-center justify-center text-center"
+              style={{ overflow: 'hidden' }}
+            >
+              {data.label as string}
+            </span>
+          )}
         </div>
       </div>
     </div>

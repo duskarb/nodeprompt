@@ -20,7 +20,11 @@ import {
   Menu,
   MessageSquare,
   ArrowUp,
+  Sun,
+  Moon,
 } from "lucide-react";
+
+export const ThemeContext = React.createContext({ isDarkMode: true, toggleTheme: () => {} });
 import {
   ReactFlow,
   useNodesState,
@@ -133,14 +137,29 @@ const MiniMapNode = ({ x, y, width, height, color }: any) => (
 // --- Flow Content Component ---
 
 export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = useCallback(() => setIsDarkMode((prev) => !prev), []);
+
   return (
-    <ReactFlowProvider>
-      <FlowContent />
-    </ReactFlowProvider>
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+      <ReactFlowProvider>
+        <FlowContent />
+      </ReactFlowProvider>
+    </ThemeContext.Provider>
   );
 }
 
 function FlowContent() {
+  const { isDarkMode, toggleTheme } = React.useContext(ThemeContext);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView, setCenter } = useReactFlow();
@@ -198,7 +217,7 @@ function FlowContent() {
   );
 
   React.useEffect(() => {
-    document.documentElement.classList.remove("dark");
+    // Dynamic theme handled by App
   }, []);
 
   React.useEffect(() => {
@@ -222,9 +241,9 @@ function FlowContent() {
         data: { strength: 5 },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: "#000000",
+          color: isDarkMode ? "#ffffff" : "#000000",
         },
-        style: { stroke: "#000000", strokeWidth: 2.5 },
+        style: { stroke: isDarkMode ? "#ffffff" : "#000000", strokeWidth: 2.5 },
         selectionWidth: 20,
       };
       setEdges((eds) => addEdge(newEdge, eds));
@@ -264,14 +283,14 @@ function FlowContent() {
           markerEnd: e.isDirected
             ? {
                 type: MarkerType.ArrowClosed,
-                color: "#000000",
+                color: isDarkMode ? "#ffffff" : "#000000",
                 width: 12,
                 height: 12,
                 strokeWidth: 1,
               }
             : undefined,
           style: {
-            stroke: "#000000",
+            stroke: isDarkMode ? "#ffffff" : "#000000",
             strokeWidth: Math.max(1, (e.strength || 5) / 2),
             opacity: 0.7,
             strokeDasharray: idx % 5 === 0 ? "5,5" : "none", // Mix of solid and dashed lines
@@ -336,7 +355,7 @@ function FlowContent() {
     if (!viewportElement) return;
 
     toPng(viewportElement, {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: isDarkMode ? "#000000" : "#FFFFFF",
       width: width,
       height: height,
       style: {
@@ -553,7 +572,7 @@ function FlowContent() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-apple-bg text-apple-text font-sans overflow-hidden relative">
+    <div className="flex h-screen w-full bg-[var(--apple-bg)] text-[var(--apple-text)] font-sans overflow-hidden relative">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <motion.aside
@@ -566,9 +585,8 @@ function FlowContent() {
             top: 16,
             left: 16,
             borderRadius: 16,
-            background: "#F7F7FA",
-            boxShadow:
-              "0 0 0 1px rgba(0,0,0,0.06), 0 4px 6px -1px rgba(0,0,0,0.07), 0 10px 40px -4px rgba(0,0,0,0.13), 0 0 80px -10px rgba(0,0,0,0.10), 0 0 40px -8px rgba(0,0,0,0.08)",
+            background: "var(--apple-card)",
+            boxShadow: "0 0 16px var(--glow-base), 0 0 0 1px var(--glow-inset)",
           }}
           transition={{ type: "tween", duration: 0.12, ease: "linear" }}
           className="fixed z-50 overflow-hidden flex flex-col"
@@ -577,7 +595,7 @@ function FlowContent() {
           {sidebarOpen && (
             <div
               onMouseDown={startResizing}
-              className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-apple-blue/20 transition-colors z-[60]"
+              className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-white/20 transition-colors z-[60]"
             />
           )}
 
@@ -589,19 +607,19 @@ function FlowContent() {
             )}
           >
             {sidebarOpen && (
-              <span className="text-[11px] text-black/50 tracking-widest uppercase">
-                NodePrompt
+              <span className="text-[13px] font-bold tracking-widest uppercase text-[var(--apple-text)]" style={{ textShadow: "0 0 8px var(--glow-base)" }}>
+                NODEPROMPT
               </span>
             )}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex items-center justify-center text-black/50 hover:text-black/90"
+              className="flex items-center justify-center text-[var(--apple-text)] opacity-50 hover:opacity-100"
               style={{
                 background: "none",
                 border: "none",
                 cursor: "pointer",
                 padding: 4,
-                transition: "color 150ms ease",
+                transition: "all 150ms ease",
               }}
               title="Toggle sidebar"
             >
@@ -781,7 +799,7 @@ function FlowContent() {
                                         markerEnd: isDirected
                                           ? {
                                               type: MarkerType.ArrowClosed,
-                                              color: "#000000",
+                                              color: isDarkMode ? "#ffffff" : "#000000",
                                             }
                                           : undefined,
                                       };
@@ -868,10 +886,8 @@ function FlowContent() {
                             disabled={isGenerating}
                             className="apple-button-secondary w-full"
                           >
-                            {isGenerating ? (
+                            {isGenerating && (
                               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Sparkles className="w-3.5 h-3.5" />
                             )}
                             <span className="text-[13px]">
                               Generate Analysis
@@ -963,14 +979,7 @@ function FlowContent() {
 
       {/* Main Canvas Area */}
       <main
-        className="flex-1 relative bg-apple-bg flex flex-col"
-        style={{
-          marginLeft: !isMobile
-            ? sidebarOpen
-              ? sidebarWidth + 32
-              : 56 + 32
-            : 0,
-        }}
+        className="flex-1 relative bg-[var(--apple-bg)] flex flex-col"
       >
         <div ref={reactFlowWrapper} className="flex-1 relative">
           <ReactFlow
@@ -987,10 +996,10 @@ function FlowContent() {
             fitView
             minZoom={0.01}
             maxZoom={4}
-            colorMode="light"
+            colorMode={isDarkMode ? "dark" : "light"}
             className="bg-transparent"
           >
-            <Background gap={20} size={1} color="#E2E2E8" />
+            <Background gap={20} size={1} color={isDarkMode ? "#333333" : "#cccccc"} />
             {!isMobile && (
               <Controls
                 showInteractive={false}
@@ -1001,13 +1010,14 @@ function FlowContent() {
             {!isMobile && (
               <MiniMap
                 nodeComponent={MiniMapNode}
-                nodeColor={() => "#1a1a1a"}
-                maskColor="rgba(247, 247, 250, 0.7)"
-                className="!rounded-xl !border-none"
+                nodeColor={() => (isDarkMode ? "#FFFFFF" : "#000000")}
+                maskColor={isDarkMode ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)"}
+                className="!border-none"
                 style={{
-                  background: "#F7F7FA",
-                  boxShadow:
-                    "0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)",
+                  background: "var(--apple-card)",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  boxShadow: "0 0 20px var(--glow-base), 0 0 0 1px var(--glow-inset)",
                 }}
               />
             )}
@@ -1029,6 +1039,13 @@ function FlowContent() {
             >
               <Download className="w-5 h-5" />
             </button>
+            <button
+              onClick={toggleTheme}
+              className="icon-btn w-12 h-12"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
           </div>
 
           {/* Mobile Analysis Result Overlay */}
@@ -1038,11 +1055,11 @@ function FlowContent() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-white overflow-y-auto custom-scrollbar p-8 safe-area-inset"
+                className="fixed inset-0 z-[100] bg-[var(--apple-bg)] overflow-y-auto custom-scrollbar p-8 safe-area-inset text-[var(--apple-text)]"
               >
                 <div className="max-w-2xl mx-auto">
-                  <div className="flex items-center justify-between mb-8 sticky top-0 bg-white/80 backdrop-blur-md py-4 z-10">
-                    <span className="text-[11px] uppercase tracking-widest text-black">
+                  <div className="flex items-center justify-between mb-8 sticky top-0 bg-[var(--apple-bg)] py-4 border-b border-[var(--apple-text)] border-opacity-10 shadow-[0_4px_20px_var(--glow-hover)] z-10">
+                    <span className="text-[11px] uppercase tracking-widest text-[var(--apple-text)]">
                       Analysis
                     </span>
                     <div className="flex gap-1.5">
@@ -1101,15 +1118,14 @@ function FlowContent() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-x-0 bottom-0 z-[80] bg-white/90 backdrop-blur-md p-6 safe-bottom"
+                className="absolute inset-x-0 bottom-0 z-[80] bg-[var(--apple-surface)] p-6 safe-bottom text-[var(--apple-text)]"
                 style={{
                   borderRadius: "20px 20px 0 0",
-                  boxShadow:
-                    "0 -4px 40px rgba(0,0,0,0.10), 0 0 60px rgba(0,0,0,0.07)",
+                  boxShadow: "0 -4px 30px var(--glow-hover), 0 0 0 1px var(--glow-inset)",
                 }}
               >
                 <div className="flex items-center justify-between mb-5">
-                  <span className="text-[11px] uppercase tracking-widest text-black/50">
+                  <span className="text-[11px] uppercase tracking-widest text-white/50">
                     {selectedElement.type === "node" ? "Node" : "Edge"}
                   </span>
                   <button
@@ -1257,7 +1273,7 @@ function FlowContent() {
                                     markerEnd: isDirected
                                       ? {
                                           type: MarkerType.ArrowClosed,
-                                          color: "#000000",
+                                          color: isDarkMode ? "#ffffff" : "#000000",
                                         }
                                       : undefined,
                                   };
@@ -1294,11 +1310,10 @@ function FlowContent() {
         {isMobile && (
           <div className="p-4 safe-bottom">
             <div
-              className="flex items-end gap-2 bg-white p-1.5 pl-4"
+              className="flex items-end gap-2 bg-[var(--apple-card)] p-1.5 pl-4"
               style={{
                 borderRadius: 999,
-                boxShadow:
-                  "0 2px 16px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.07), 0 0 32px rgba(0,0,0,0.07)",
+                boxShadow: "0 0 16px var(--glow-base), 0 0 0 1px var(--glow-inset)",
               }}
             >
               <textarea
@@ -1391,6 +1406,7 @@ function FlowContent() {
           border: 2px solid var(--apple-card);
         }
         .react-flow__edge-path {
+          stroke: #ffffff;
           stroke-linecap: round;
           transition: stroke 0.2s, stroke-width 0.2s;
         }
@@ -1401,7 +1417,6 @@ function FlowContent() {
         .react-flow__controls-button {
           border-bottom: 1px solid var(--apple-border) !important;
           background: var(--apple-surface) !important;
-          backdrop-blur: 10px;
         }
         .react-flow__controls-button svg {
           fill: var(--apple-text) !important;

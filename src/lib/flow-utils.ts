@@ -78,11 +78,11 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
       const maxRadiusSum = Math.max(...sizes);
       
       const n = nodes.length;
-      const minRadiusForSpacing = n > 1 
-        ? (1.5 * maxRadiusSum) / (2 * Math.sin(Math.PI / n))
+      const minRadiusForSpacing = n > 1
+        ? (2 * maxRadiusSum) / (2 * Math.sin(Math.PI / n))
         : 0;
-      
-      const radius = Math.max(minRadiusForSpacing, (1.5 * totalSize) / (2 * Math.PI), 1200);
+
+      const radius = Math.max(minRadiusForSpacing, (2 * totalSize) / (2 * Math.PI), 1200);
       
       const newNodes = nodes.map((node, index) => {
         const size = getNodeSize(node.data?.strength as number);
@@ -132,7 +132,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
             const dx = n1.x - n2.x;
             const dy = n1.y - n2.y;
             const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-            const minDist = (n1.size + n2.size) / 2 + 20; // Reduced gap dramatically
+            const minDist = n1.size + n2.size; // 2 * (r1 + r2)
             
             let repulse = 0;
             if (dist < minDist) {
@@ -160,7 +160,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
             const dist = Math.sqrt(dx*dx + dy*dy) || 1;
             const strength = (edge.data?.strength as number) || 5;
             
-            const sumSizes = (s.size + t.size) / 2 + 20; // Reduced base gap
+            const sumSizes = s.size + t.size; // 2 * (r1 + r2)
             // Stronger edges want to be closer
             const targetDist = Math.max(sumSizes, k - (strength * 5)); // Scaled down targeting
             // Hooke's law attraction

@@ -49,12 +49,9 @@ export const LombardiEdge = ({ id, source, target, style = {}, markerEnd, label,
   const edgeColorSelected = isDarkMode ? '#ffffff' : '#000000';
   const shadowFilter = isDarkMode ? 'drop-shadow(0 0 8px rgba(255,255,255,0.8))' : 'drop-shadow(0 0 4px rgba(0,0,0,0.3))';
 
-  const dynamicMarkerEnd = React.useMemo(() => {
-    if (markerEnd && typeof markerEnd === 'object') {
-      return { ...(markerEnd as any), color: selected ? edgeColorSelected : edgeColorNormal };
-    }
-    return markerEnd;
-  }, [markerEnd, selected, edgeColorSelected, edgeColorNormal]);
+  const strokeColor = selected ? edgeColorSelected : edgeColorNormal;
+  const hasArrow = !!markerEnd;
+  const markerId = `custom-arrow-${id}`;
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX: sx,
@@ -67,12 +64,35 @@ export const LombardiEdge = ({ id, source, target, style = {}, markerEnd, label,
 
   return (
     <>
+      {hasArrow && (
+        <defs>
+          <marker
+            id={markerId}
+            markerWidth="12.5"
+            markerHeight="12.5"
+            viewBox="-10 -10 20 20"
+            markerUnits="strokeWidth"
+            orient="auto-start-reverse"
+            refX="0"
+            refY="0"
+          >
+            <polyline
+              stroke={strokeColor}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill={strokeColor}
+              strokeWidth={1}
+              points="-5,-4 0,0 -5,4 -5,-4"
+            />
+          </marker>
+        </defs>
+      )}
       <BaseEdge
         path={edgePath}
-        markerEnd={dynamicMarkerEnd}
+        markerEnd={hasArrow ? `url(#${markerId})` : undefined}
         style={{
           ...style,
-          stroke: selected ? edgeColorSelected : edgeColorNormal,
+          stroke: strokeColor,
           strokeWidth: selected ? (Number(style.strokeWidth || 1) + 2) : (style.strokeWidth || 1),
           filter: selected ? shadowFilter : 'none',
         }}

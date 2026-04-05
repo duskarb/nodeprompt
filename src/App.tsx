@@ -376,7 +376,7 @@ function FlowContent() {
       .catch((err) => {
         console.error("Download failed", err);
       });
-  }, [nodes]);
+  }, [nodes, isDarkMode]);
 
   const handleGenerate = async () => {
     if (nodes.length === 0) return;

@@ -281,7 +281,7 @@ function FlowContent() {
           target: e.target,
           label: e.label,
           type: "lombardi", // Use custom edge for better label rendering
-          animated: !!e.isDirected,
+          animated: false,
           data: { strength: e.strength || 5, isDirected: e.isDirected },
           markerEnd: e.isDirected
             ? {
@@ -296,7 +296,7 @@ function FlowContent() {
             stroke: isDarkMode ? "#ffffff" : "#000000",
             strokeWidth: Math.max(1, (e.strength || 5) / 2),
             opacity: 0.7,
-            strokeDasharray: idx % 5 === 0 ? "5,5" : "none", // Mix of solid and dashed lines
+            strokeDasharray: undefined,
           },
           selectionWidth: 20,
         }),
@@ -875,13 +875,13 @@ function FlowContent() {
                                   className="node-list-item"
                                   title={node.data.label as string}
                                 >
-                                  <span className="text-[10px] w-4 shrink-0 text-center text-black/25 tabular-nums">
+                                  <span className="text-[10px] w-4 shrink-0 text-center tabular-nums" style={{ color: isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.25)' }}>
                                     {i + 1}
                                   </span>
                                   <span className="flex-1 text-[12px] truncate">
                                     {node.data.label as string}
                                   </span>
-                                  <span className="text-[10px] shrink-0 tabular-nums text-black/30 pr-1">
+                                  <span className="text-[10px] shrink-0 tabular-nums pr-1" style={{ color: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.30)' }}>
                                     {node.data?.strength || 5}
                                   </span>
                                 </button>

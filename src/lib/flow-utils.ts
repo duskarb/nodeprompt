@@ -98,52 +98,115 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'R
       });
       return { nodes: newNodes, edges };
     } else {
-      const otherNodes = nodes.filter(n => n.id !== hubNodeId);
+      // Force-directed layout for organic clustering around the hub
+      const iterations = 300;
+      const k = 150; // Optimal resting distance (reduced heavily)
       
-      const hubStrengths: Record<string, number> = {};
-      edges.forEach(edge => {
-        const strength = (edge.data?.strength as number) || 5;
-        if (edge.source === hubNodeId) hubStrengths[edge.target] = Math.max(hubStrengths[edge.target] || 0, strength);
-        if (edge.target === hubNodeId) hubStrengths[edge.target] = Math.max(hubStrengths[edge.target] || 0, strength);
-        if (edge.target === hubNodeId) hubStrengths[edge.source] = Math.max(hubStrengths[edge.source] || 0, strength);
-      });
-
-      const hubNode = nodes.find(n => n.id === hubNodeId);
-      const hubSize = getNodeSize(hubNode?.data?.strength as number);
-      const hubRadius = hubSize / 2;
-
-      const newNodes = nodes.map((node) => {
-        const nodeSize = getNodeSize(node.data?.strength as number);
-        
-        if (node.id === hubNodeId) {
-          return { ...node, position: { x: centerX - nodeSize / 2, y: centerY - nodeSize / 2 } };
-        }
-        
-        const index = otherNodes.findIndex(n => n.id === node.id);
-        const angle = (index / otherNodes.length) * 2 * Math.PI;
-        
-        const strength = hubStrengths[node.id] || 1;
-        const nodeRadius = nodeSize / 2;
-
-        const minHubDist = 2.0 * (hubRadius + nodeRadius);
-        const maxHubDist = 5.0 * (hubRadius + nodeRadius);
-        const baseRadius = maxHubDist - ((Math.min(15, strength) - 1) / 14) * (maxHubDist - minHubDist);
-        
-        const deltaTheta = (2 * Math.PI) / Math.max(1, otherNodes.length);
-        const minRadiusForSiblings = otherNodes.length > 1
-          ? (1.5 * (nodeSize)) / (2 * Math.sin(deltaTheta / 2))
-          : 0;
-
-        const radius = Math.max(baseRadius, minRadiusForSiblings, 1200);
-        
+      const n = nodes.length;
+      let simNodes = nodes.map((node, i) => {
+        const radius = 100; // Reduced initial spawn radius
+        const angle = (i / n) * 2 * Math.PI;
         return {
-          ...node,
-          position: {
-            x: centerX + radius * Math.cos(angle) - nodeSize / 2,
-            y: centerY + radius * Math.sin(angle) - nodeSize / 2,
-          },
+          id: node.id,
+          x: node.id === hubNodeId ? centerX : centerX + Math.cos(angle) * radius,
+          y: node.id === hubNodeId ? centerY : centerY + Math.sin(angle) * radius,
+          size: getNodeSize(node.data?.strength as number),
+          vx: 0,
+          vy: 0
         };
       });
+
+      for (let iter = 0; iter < iterations; iter++) {
+        const temperature = Math.max(1, 100 * (1 - iter / iterations));
+        
+        simNodes.forEach(node1 => {
+          node1.vx = 0;
+          node1.vy = 0;
+        });
+
+        // Repulsion
+        for(let i=0; i<simNodes.length; i++) {
+          for(let j=i+1; j<simNodes.length; j++) {
+            const n1 = simNodes[i];
+            const n2 = simNodes[j];
+            const dx = n1.x - n2.x;
+            const dy = n1.y - n2.y;
+            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            const minDist = (n1.size + n2.size) / 2 + 20; // Reduced gap dramatically
+            
+            let repulse = 0;
+            if (dist < minDist) {
+              repulse = 500 / dist; // Strong collision bounce
+            } else {
+              repulse = (k * k * 0.2) / dist; // Weaker standard repulsion
+            }
+            
+            const fx = (dx / dist) * repulse;
+            const fy = (dy / dist) * repulse;
+            n1.vx += fx;
+            n1.vy += fy;
+            n2.vx -= fx;
+            n2.vy -= fy;
+          }
+        }
+
+        // Attraction
+        edges.forEach(edge => {
+          const s = simNodes.find(node => node.id === edge.source);
+          const t = simNodes.find(node => node.id === edge.target);
+          if (s && t) {
+            const dx = s.x - t.x;
+            const dy = s.y - t.y;
+            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            const strength = (edge.data?.strength as number) || 5;
+            
+            const sumSizes = (s.size + t.size) / 2 + 20; // Reduced base gap
+            // Stronger edges want to be closer
+            const targetDist = Math.max(sumSizes, k - (strength * 5)); // Scaled down targeting
+            // Hooke's law attraction
+            const attract = (dist - targetDist) * 0.15; // Slightly stronger rubber banding
+            
+            const fx = (dx / dist) * attract;
+            const fy = (dy / dist) * attract;
+            s.vx -= fx;
+            s.vy -= fy;
+            t.vx += fx;
+            t.vy += fy;
+          }
+        });
+
+        // Center Gravity & Appling Velocity
+        simNodes.forEach(node => {
+          if (node.id !== hubNodeId) {
+            const dx = node.x - centerX;
+            const dy = node.y - centerY;
+            const distToCenter = Math.sqrt(dx*dx + dy*dy) || 1;
+            // Pull lightly toward center to keep tight clusters
+            node.vx -= (dx / distToCenter) * (distToCenter * 0.02);
+
+            const v = Math.sqrt(node.vx * node.vx + node.vy * node.vy) || 1;
+            const limitedV = Math.min(v, temperature);
+            node.x += (node.vx / v) * limitedV;
+            node.y += (node.vy / v) * limitedV;
+          } else {
+            // Keep Hub pinned exactly at center
+            node.x = centerX;
+            node.y = centerY;
+          }
+        });
+      }
+
+      const newNodes = nodes.map(orig => {
+        const simNode = simNodes.find(sn => sn.id === orig.id)!;
+        return {
+          ...orig,
+          position: {
+            x: simNode.x - simNode.size / 2,
+            y: simNode.y - simNode.size / 2
+          }
+        };
+      });
+
       return { nodes: newNodes, edges };
     }
   }

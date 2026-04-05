@@ -24,7 +24,10 @@ import {
   Moon,
 } from "lucide-react";
 
-export const ThemeContext = React.createContext({ isDarkMode: true, toggleTheme: () => {} });
+export const ThemeContext = React.createContext({
+  isDarkMode: true,
+  toggleTheme: () => {},
+});
 import {
   ReactFlow,
   useNodesState,
@@ -572,7 +575,7 @@ function FlowContent() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[var(--apple-bg)] text-[var(--apple-text)] font-sans overflow-hidden relative">
+    <div className="flex h-[100dvh] w-full bg-[var(--apple-bg)] text-[var(--apple-text)] font-sans overflow-hidden relative">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <motion.aside
@@ -607,7 +610,10 @@ function FlowContent() {
             )}
           >
             {sidebarOpen && (
-              <span className="text-[13px] font-bold tracking-widest uppercase text-[var(--apple-text)]" style={{ textShadow: "0 0 8px var(--glow-base)" }}>
+              <span
+                className="text-[13px] font-bold tracking-widest uppercase text-[var(--apple-text)]"
+                style={{ textShadow: "0 0 8px var(--glow-base)" }}
+              >
                 NODEPROMPT
               </span>
             )}
@@ -637,7 +643,6 @@ function FlowContent() {
           >
             {sidebarOpen ? (
               <>
-
                 <div className="flex-1 space-y-4">
                   {selectedElement ? (
                     <motion.div
@@ -799,7 +804,9 @@ function FlowContent() {
                                         markerEnd: isDirected
                                           ? {
                                               type: MarkerType.ArrowClosed,
-                                              color: isDarkMode ? "#ffffff" : "#000000",
+                                              color: isDarkMode
+                                                ? "#ffffff"
+                                                : "#000000",
                                             }
                                           : undefined,
                                       };
@@ -955,7 +962,6 @@ function FlowContent() {
             ) : (
               /* Mini Mode Icons */
               <div className="flex flex-col gap-3">
-
                 {nodes.length > 0 && (
                   <button
                     onClick={handleGenerate}
@@ -970,7 +976,6 @@ function FlowContent() {
                     )}
                   </button>
                 )}
-
               </div>
             )}
           </div>
@@ -978,9 +983,7 @@ function FlowContent() {
       )}
 
       {/* Main Canvas Area */}
-      <main
-        className="flex-1 relative bg-[var(--apple-bg)] flex flex-col"
-      >
+      <main className="flex-1 relative bg-[var(--apple-bg)] flex flex-col">
         <div ref={reactFlowWrapper} className="flex-1 relative">
           <ReactFlow
             nodes={nodesWithHighlight}
@@ -999,7 +1002,7 @@ function FlowContent() {
             colorMode={isDarkMode ? "dark" : "light"}
             className="bg-transparent"
           >
-            <Background gap={20} size={1} color={isDarkMode ? "#333333" : "#cccccc"} />
+            <Background gap={20} size={1} color="#333333" />
             {!isMobile && (
               <Controls
                 showInteractive={false}
@@ -1010,14 +1013,13 @@ function FlowContent() {
             {!isMobile && (
               <MiniMap
                 nodeComponent={MiniMapNode}
-                nodeColor={() => (isDarkMode ? "#FFFFFF" : "#000000")}
-                maskColor={isDarkMode ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)"}
-                className="!border-none"
+                nodeColor={() => "#FFFFFF"}
+                maskColor="rgba(0, 0, 0, 0.7)"
+                className="!rounded-xl !border-none"
                 style={{
-                  background: "var(--apple-card)",
-                  borderRadius: "16px",
-                  overflow: "hidden",
-                  boxShadow: "0 0 20px var(--glow-base), 0 0 0 1px var(--glow-inset)",
+                  background: "#0a0a0a",
+                  boxShadow:
+                    "0 0 12px rgba(255,255,255,0.08), 0 0 0 1px rgba(255,255,255,0.06)",
                 }}
               />
             )}
@@ -1042,9 +1044,15 @@ function FlowContent() {
             <button
               onClick={toggleTheme}
               className="icon-btn w-12 h-12"
-              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={
+                isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"
+              }
             >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {isDarkMode ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
             </button>
           </div>
 
@@ -1121,7 +1129,8 @@ function FlowContent() {
                 className="absolute inset-x-0 bottom-0 z-[80] bg-[var(--apple-surface)] p-6 safe-bottom text-[var(--apple-text)]"
                 style={{
                   borderRadius: "20px 20px 0 0",
-                  boxShadow: "0 -4px 30px var(--glow-hover), 0 0 0 1px var(--glow-inset)",
+                  boxShadow:
+                    "0 -4px 30px var(--glow-hover), 0 0 0 1px var(--glow-inset)",
                 }}
               >
                 <div className="flex items-center justify-between mb-5">
@@ -1273,7 +1282,9 @@ function FlowContent() {
                                     markerEnd: isDirected
                                       ? {
                                           type: MarkerType.ArrowClosed,
-                                          color: isDarkMode ? "#ffffff" : "#000000",
+                                          color: isDarkMode
+                                            ? "#ffffff"
+                                            : "#000000",
                                         }
                                       : undefined,
                                   };
@@ -1308,12 +1319,13 @@ function FlowContent() {
 
         {/* Mobile Chat-style Input Bar */}
         {isMobile && (
-          <div className="p-4 safe-bottom">
+          <div className="absolute inset-x-0 bottom-0 z-50 p-4 safe-bottom pointer-events-none">
             <div
-              className="flex items-end gap-2 bg-[var(--apple-card)] p-1.5 pl-4"
+              className="flex items-end gap-2 bg-[var(--apple-card)] p-1.5 pl-4 pointer-events-auto"
               style={{
-                borderRadius: 999,
-                boxShadow: "0 0 16px var(--glow-base), 0 0 0 1px var(--glow-inset)",
+                borderRadius: 24,
+                boxShadow:
+                  "0 0 16px var(--glow-base), 0 0 0 1px var(--glow-inset)",
               }}
             >
               <textarea

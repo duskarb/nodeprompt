@@ -3,7 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>nodeprompt</title>
+    <meta
+      name="description"
+      content="nodeprompt turns a prompt into a dense, Lombardi-style network map of entities, influence, and hidden connections."
+    />
+    <meta name="theme-color" content="#000000" />
+
+    <!-- Speed up the first API call by warming up the Gemini connection early -->
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin />
+
+    <!-- Open Graph / social sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="nodeprompt" />
+    <meta
+      property="og:description"
+      content="Turn any prompt into a dense, Lombardi-style network map of influence and hidden connections."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <title>nodeprompt — prompt to influence map</title>
   </head>
   <body>
     <div id="root"></div>

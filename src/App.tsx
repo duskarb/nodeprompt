@@ -3,7 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  Suspense,
+  lazy,
+} from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
@@ -45,9 +52,11 @@ import {
   getNodesBounds,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { extractNodesAndEdges, generateFinalResponse } from "./lib/gemini";
-import ReactMarkdown from "react-markdown";
-import { toPng } from "html-to-image";
+// The Gemini SDK (@google/genai) is large and only needed once the user
+// submits a prompt, so it is imported on demand inside the handlers below.
+// Lazily loaded: react-markdown only renders after a response is generated,
+// so it should not be part of the initial bundle.
+const ReactMarkdown = lazy(() => import("react-markdown"));
 import { CustomNode } from "./components/CustomNode";
 import { LombardiEdge } from "./components/LombardiEdge";
 import { getLayoutedElements, getNodeSize } from "./lib/flow-utils";
@@ -259,6 +268,7 @@ function FlowContent() {
     setIsExtracting(true);
     setResult(null);
     try {
+      const { extractNodesAndEdges } = await import("./lib/gemini");
       const { nodes: extractedNodes, edges: extractedEdges } =
         await extractNodesAndEdges(prompt);
 
@@ -335,8 +345,11 @@ function FlowContent() {
     [nodes, edges, setNodes, setEdges, fitView],
   );
 
-  const onDownload = useCallback(() => {
+  const onDownload = useCallback(async () => {
     if (reactFlowWrapper.current === null || nodes.length === 0) return;
+
+    // html-to-image is only needed for PNG export, so load it on demand.
+    const { toPng } = await import("html-to-image");
 
     const nodesBounds = getNodesBounds(nodes);
     const margin = 100;
@@ -396,6 +409,7 @@ function FlowContent() {
         strength: (e.data?.strength as number) || 5,
         isDirected: !!e.markerEnd,
       }));
+      const { generateFinalResponse } = await import("./lib/gemini");
       const response = await generateFinalResponse(nodeData, edgeData, prompt);
       setResult(response);
     } catch (error) {
@@ -929,32 +943,34 @@ function FlowContent() {
                       </div>
                     </div>
                     <div className="text-[13px] leading-relaxed markdown-body">
-                      <ReactMarkdown
-                        components={{
-                          p: ({ children }) => (
-                            <p className="mb-2">
-                              {parseAndWrapSentences(
-                                children,
-                                (t) =>
-                                  setHighlightedNodeIds(getMatchingNodeIds(t)),
-                                () => setHighlightedNodeIds(new Set()),
-                              )}
-                            </p>
-                          ),
-                          li: ({ children }) => (
-                            <li className="list-inside">
-                              {parseAndWrapSentences(
-                                children,
-                                (t) =>
-                                  setHighlightedNodeIds(getMatchingNodeIds(t)),
-                                () => setHighlightedNodeIds(new Set()),
-                              )}
-                            </li>
-                          ),
-                        }}
-                      >
-                        {result}
-                      </ReactMarkdown>
+                      <Suspense fallback={null}>
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => (
+                              <p className="mb-2">
+                                {parseAndWrapSentences(
+                                  children,
+                                  (t) =>
+                                    setHighlightedNodeIds(getMatchingNodeIds(t)),
+                                  () => setHighlightedNodeIds(new Set()),
+                                )}
+                              </p>
+                            ),
+                            li: ({ children }) => (
+                              <li className="list-inside">
+                                {parseAndWrapSentences(
+                                  children,
+                                  (t) =>
+                                    setHighlightedNodeIds(getMatchingNodeIds(t)),
+                                  () => setHighlightedNodeIds(new Set()),
+                                )}
+                              </li>
+                            ),
+                          }}
+                        >
+                          {result}
+                        </ReactMarkdown>
+                      </Suspense>
                     </div>
                   </div>
                 )}
@@ -1087,32 +1103,34 @@ function FlowContent() {
                     </div>
                   </div>
                   <div className="text-sm leading-relaxed markdown-body pb-20">
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => (
-                          <p className="mb-2">
-                            {parseAndWrapSentences(
-                              children,
-                              (t) =>
-                                setHighlightedNodeIds(getMatchingNodeIds(t)),
-                              () => setHighlightedNodeIds(new Set()),
-                            )}
-                          </p>
-                        ),
-                        li: ({ children }) => (
-                          <li className="list-inside">
-                            {parseAndWrapSentences(
-                              children,
-                              (t) =>
-                                setHighlightedNodeIds(getMatchingNodeIds(t)),
-                              () => setHighlightedNodeIds(new Set()),
-                            )}
-                          </li>
-                        ),
-                      }}
-                    >
-                      {result}
-                    </ReactMarkdown>
+                    <Suspense fallback={null}>
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => (
+                            <p className="mb-2">
+                              {parseAndWrapSentences(
+                                children,
+                                (t) =>
+                                  setHighlightedNodeIds(getMatchingNodeIds(t)),
+                                () => setHighlightedNodeIds(new Set()),
+                              )}
+                            </p>
+                          ),
+                          li: ({ children }) => (
+                            <li className="list-inside">
+                              {parseAndWrapSentences(
+                                children,
+                                (t) =>
+                                  setHighlightedNodeIds(getMatchingNodeIds(t)),
+                                () => setHighlightedNodeIds(new Set()),
+                              )}
+                            </li>
+                          ),
+                        }}
+                      >
+                        {result}
+                      </ReactMarkdown>
+                    </Suspense>
                   </div>
                 </div>
               </motion.div>

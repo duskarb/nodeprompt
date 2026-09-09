@@ -29,7 +29,7 @@ export async function extractNodesAndEdges(prompt: string) {
   const targetNodeCount = Math.max(10, Math.floor(wordCount / 5)); // Roughly 1 node per 5 words, min 10
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.8-flash",
     contents: `Extract EVERY key entity, sub-entity, and relationship from the following prompt, creating an extremely complex, sweeping map of influence in the signature style of Mark Lombardi.
     
     Break down the linear text into an extremely granular, dense, non-linear network of power, causality, and hidden connections.
@@ -109,7 +109,7 @@ export async function generateFinalResponse(nodes: NodeData[], edges: EdgeData[]
   `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-3.8-flash",
     contents: `Based on the following non-linear graph structure derived from an initial prompt, generate a comprehensive and creative response.
     The graph represents the core concepts and their specific relationships (connections, order, strength).
     

@@ -1,6 +1,11 @@
 # NodePrompt
 
 **A node-based interface for turning linear prompts into editable networks of concepts and relationships.**
+**프롬프트를 문장이 아니라 관계의 그래프로 다루는 AI 인터페이스.**
+
+<!-- TODO(여남규): 데모 GIF 또는 스크린샷 추가 - assets/ 폴더에 넣고 아래 주석을 이미지로 교체
+<img src="assets/demo.gif" alt="Prompt to graph to generation" width="80%">
+-->
 
 NodePrompt explores a different way of prompting AI: instead of treating a prompt as a fixed sentence, it breaks the text into a graph that can be inspected, rearranged, edited, and used again as the structure for generation.
 
@@ -15,6 +20,10 @@ Most AI interfaces keep the logic of a prompt hidden inside a block of text. Nod
 A prompt is decomposed into entities, actions, concepts, risks, and the relationships between them. The resulting network becomes an intermediate design space: users can change labels, strengths, connections, and layout before asking the model to synthesize a final response.
 
 The project treats prompting less like writing a command and more like **designing a system of relationships**.
+
+## 한국어 요약
+
+대부분의 AI 인터페이스는 프롬프트를 하나의 텍스트 덩어리로 취급한다. NodePrompt는 프롬프트를 개체·행위·개념·위험 노드와 그 관계로 분해해, 생성 전에 사람이 구조를 직접 보고 고칠 수 있게 만든다. 프롬프팅을 "명령문 쓰기"가 아니라 **"관계의 시스템을 설계하는 일"**로 보는 실험적 인터페이스다.
 
 ## What it does
 
